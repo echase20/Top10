@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     createSquares();
-    addImageToSquares('images/pizza.jpg', "1", 'Pizza');
-    addImageToSquares('images/burger.jpg', '3', 'Burger');
+    addImageToSquares('images/pizza.jpg', "1", 'Pizza', "Pizza");
+    addImageToSquares('images/burger.jpg', "3", 'Burger', "Burger");
     addSubmitButton();
     addDarkModeButton();
     const answerKey = {
@@ -149,12 +149,14 @@ document.addEventListener("DOMContentLoaded", () => {
       gameboard.appendChild(leftColumn);
       gameboard.appendChild(rightColumn);
     }
-    function addImageToSquares(imagesrc, squareid, alt) {
+    function addImageToSquares(imagesrc, squareid, alt, labelText) {
         const square = document.getElementById(squareid);
         if (!square) {
           console.error(`Square with ID ${squareid} not found.`);
           return;
       }
+
+
         var img = document.createElement('img');
         img.src = imagesrc;
         img.alt = alt;
@@ -164,7 +166,17 @@ document.addEventListener("DOMContentLoaded", () => {
         //img.style.objectFit = 'cover';
         img.draggable = true;
         img.originalSquare= squareid;
+
+        const label = document.createElement("span");
+        label.classList.add("image-label");
+        label.textContent = labelText; // Custom text
+
+        // Append image and text to the wrapper
         square.appendChild(img);
+        square.appendChild(label);
+
+        // Append wrapper to the square
+        // square.appendChild(img);
         console.log(`Image ${img.id} added to square ${squareid}`);
     }
     function addSubmitButton() {
@@ -186,49 +198,67 @@ document.addEventListener("DOMContentLoaded", () => {
     }
  
     function checkAnswers() {
-      const squares = document.querySelectorAll(".square"); // Get all squares
+    const squares = document.querySelectorAll(".square"); // Get all squares
+    const images = document.querySelectorAll("img");
 
-      // Step 1: Reset all squares' colors before checking
-      squares.forEach((square) => {
-          square.classList.remove("correct", "close", "incorrect");
-      });
-      const images = document.querySelectorAll("img");
+    // Reset colors before applying new ones
+    squares.forEach((square) => {
+        square.classList.remove("correct", "close", "incorrect");
+    });
 
-      images.forEach((img) => {
+    // Step 1: Show correct (green) immediately
+    images.forEach((img) => {
+        const parentSquare = img.parentElement;
+        const correctSquareId = parseInt(answerKey[img.id]); // Correct square
+        const currentSquareId = parseInt(parentSquare.id); // Current square
+        const originalSquareId = img.dataset.originalSquare;
 
-          const parentSquare = img.parentElement;
-          const correctSquareId = answerKey[img.id];
-          const originalSquareId = img.originalSquare;
-          console.log(`Image ${img.id}: Current square ${parentSquare.id}, Original square ${originalSquareId}, Correct square ${correctSquareId}`)
-          parentSquare.classList.remove("correct", "close", "incorrect");
-          if (parentSquare.id !==  correctSquareId) {
-              const difference = Number(parentSquare.id) - Number(correctSquareId);
-              console.log(difference);
-              if (Math.abs(difference) === 2) {
-                parentSquare.classList.add("close");
-              }
-              else {
-              parentSquare.classList.add("incorrect");
-              }
-              // Move image back to its original square
-              const originalSquare = document.getElementById(originalSquareId);
-              if (originalSquare) {
-                originalSquare.appendChild(img);
-
-              // Reset position
-                img.style.left = "0px";
-                img.style.top = "0px";
-              } else {
-                console.error(`Original square with ID ${originalSquareId} not found.`)
-              }
-          }
-          else {
+        if (currentSquareId === correctSquareId) {
+            // Apply green immediately
             parentSquare.classList.add("correct");
-          }
-      });
+        }
+    });
 
-      console.log("Checked answers and moved incorrect images back.");
-  }
+    // Step 2: After 1 second, fade out green and show yellow (close answers)
+    setTimeout(() => {
+        images.forEach((img) => {
+            const parentSquare = img.parentElement;
+            const correctSquareId = parseInt(answerKey[img.id]);
+            const currentSquareId = parseInt(parentSquare.id);
+
+            if (Math.abs(currentSquareId - correctSquareId) === 1) {
+                // Remove green and apply yellow (close)
+                parentSquare.classList.remove("correct");
+                parentSquare.classList.add("close");
+            }
+        });
+    }, 1000); // 1-second delay
+
+    // Step 3: After 2 seconds, fade out yellow and show red (incorrect answers)
+    setTimeout(() => {
+        images.forEach((img) => {
+            const parentSquare = img.parentElement;
+            const correctSquareId = parseInt(answerKey[img.id]);
+            const currentSquareId = parseInt(parentSquare.id);
+            const originalSquareId = img.dataset.originalSquare;
+
+            if (currentSquareId !== correctSquareId && Math.abs(currentSquareId - correctSquareId) > 1) {
+                // Remove yellow and apply red (incorrect answers)
+                parentSquare.classList.remove("close");
+                parentSquare.classList.add("incorrect");
+
+                // Move the image back to its original square
+                const originalSquare = document.getElementById(originalSquareId);
+                if (originalSquare) {
+                    originalSquare.appendChild(img);
+                    img.style.left = "0px";
+                    img.style.top = "0px";
+                }
+            }
+        });
+    }, 2000); // 2-second delay
+}
+
 
   function addDarkModeButton() {
     const boardContainer = document.getElementById("board-container");

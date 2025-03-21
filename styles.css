@@ -49,6 +49,11 @@ header {
 }
 
 .square {
+    display: flex;
+    flex-direction: row; /* Align image and text in a row */
+    align-items: center; /* Vertically align items in the square */
+    justify-content: flex-start; /* Align content to the left */
+    padding: 5px; /* Adds space inside the square */
     border: 2px solid black;
     border-radius: 25px;
     min-width: 200px;
@@ -56,6 +61,7 @@ header {
     overflow: hidden;
     position: relative;
 }
+
 .column {
     display: flex;
     flex-direction: column;
@@ -80,15 +86,23 @@ header {
     background-color: yellow !important; /* Yellow for placement within 1 */
 }
 
-img {
-    position: absolute;
+.square img {
+    position: relative;
     cursor: grab;
+
 }
 
-img:active {
+.square img:active {
     cursor: grabbing;
 }
-
+/* Style the text inside the square */
+.square .image-label {
+    position: relative;
+    font-size: 16px;
+    font-weight: bold;
+    color: black; /* Adjust for dark mode if needed */
+    white-space: nowrap; /* Prevents text from wrapping */
+}
 /* Dark Mode */
 .dark-mode {
     background-color: #121212;
