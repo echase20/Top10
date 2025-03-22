@@ -1,0 +1,142 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    color: black;
+    background-color: white;
+}
+
+#container {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    flex-direction: column;
+}
+
+header {
+    border-bottom: 1px solid black;
+}
+
+.title {
+    color: black;
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-align: center;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+#board-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    gap: 20px;
+}
+
+#board {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    row-gap: 5px;
+    column-gap: 200px;
+    padding: 10px;
+    box-sizing: border-box;
+
+}
+
+.square {
+    display: flex;
+    flex-direction: row; /* Align image and text in a row */
+    align-items: center; /* Vertically align items in the square */
+    justify-content: flex-start; /* Align content to the left */
+    padding: 5px; /* Adds space inside the square */
+    border: 2px solid black;
+    border-radius: 25px;
+    min-width: 200px;
+    min-height: 60px;
+    overflow: hidden;
+    position: relative;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Space between squares in the column */
+}
+.square.highlight {
+    background-color: #cceeff;
+}
+#submitButton {
+    border-radius: 25px;
+    width: 100px;
+    height: 50px;
+}
+.correct {
+    background-color: #4CAF50 !important; /* Green for correct placement */
+}
+
+.incorrect {
+    background-color: #FF5733 !important; /* Red for incorrect placement */
+}
+.close {
+    background-color: yellow !important; /* Yellow for placement within 1 */
+}
+
+.square img {
+    position: relative;
+    cursor: grab;
+
+}
+
+.square img:active {
+    cursor: grabbing;
+}
+/* Style the text inside the square */
+.square .image-label {
+    position: relative;
+    font-size: 16px;
+    font-weight: bold;
+    color: black; /* Adjust for dark mode if needed */
+    white-space: nowrap; /* Prevents text from wrapping */
+}
+/* Dark Mode */
+.dark-mode {
+    background-color: #121212;
+    color: white;
+}
+
+/* Adjust Square Colors for Dark Mode */
+.dark-mode .square {
+    border: 2px solid white;
+}
+.dark-mode .correct {
+    background-color: #2E7D32 !important; /* Darker Green */
+}
+
+.dark-mode .close {
+    background-color: #FBC02D !important; /* Darker Yellow */
+}
+
+.dark-mode .incorrect {
+    background-color: #D32F2F !important; /* Darker Red */
+}
+
+/* Dark Mode Button Styling */
+#darkModeToggle {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #333;
+    color: white;
+}
+
+#darkModeToggle:hover {
+    background-color: #444;
+}
