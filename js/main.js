@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+  //change happened
   createSquares();
   addImageToSquares('images/pizza.jpg', "1", 'Pizza', "Pizza");
   addImageToSquares('images/burger.jpg', "3", 'Burger', "Burger");
