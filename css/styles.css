@@ -85,7 +85,9 @@ header {
 .close {
     background-color: yellow !important; /* Yellow for placement within 1 */
 }
-
+.correct, .close, .incorrect {
+    transition: background-color 0.3s ease;
+}
 .square img {
     position: relative;
     cursor: grab;
@@ -140,3 +142,118 @@ header {
 #darkModeToggle:hover {
     background-color: #444;
 }
+
+#menuToggle {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    font-size: 24px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+#sidebarMenu {
+    position: fixed;
+    top: 0;
+    left: -200px;
+    width: 200px;
+    height: 100%;
+    background-color: #333;
+    color: white;
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+    transition: left 0.3s ease;
+    z-index: 999;
+}
+
+#sidebarMenu ul {
+    list-style: none;
+    padding: 0;
+}
+
+#sidebarMenu li {
+    padding: 10px 0;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#sidebarMenu li:hover {
+    background-color: #444;
+}
+
+#sidebarMenu.open {
+    left: 0;
+}
+
+#pageContent {
+    padding: 40px;
+    font-size: 1.2rem;
+    background-color: #f8f8f8;
+}
+#closePageBtn {
+    display: inline-block;
+    margin-bottom: 20px;
+    padding: 10px 15px;
+    font-size: 14px;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#closePageBtn:hover {
+    background-color: #555;
+}
+
+/* Slider container */
+.switch {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+    z-index: 1000;
+  }
+  
+  /* Hide the default checkbox */
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  /* The slider itself */
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background-color: #ccc;
+    border-radius: 34px;
+    transition: background-color 0.4s;
+  }
+  
+  /* The slider knob */
+  .slider::before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.4s;
+  }
+  
+  /* Checked state (dark mode on) */
+  input:checked + .slider {
+    background-color: #2196F3;
+  }
+  
+  input:checked + .slider::before {
+    transform: translateX(26px);
+  }

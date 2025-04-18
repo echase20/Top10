@@ -10,6 +10,24 @@
     <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
+        <!-- Menu Button -->
+    <button id="menuToggle">☰</button>
+
+    <!-- Sidebar Menu -->
+    <div id="sidebarMenu">
+        <ul>
+            <li data-page="tipsandtricks">Tips And Tricks</li>
+            <li data-page="howtoplay">How To Play</li>
+            <li data-page="credits">Credits</li>
+        </ul>
+    </div>
+
+    <!-- Page Content (Hidden by default) -->
+    <div id="pageContent" style="display: none;"></div>
+    <label class="switch">
+        <input type="checkbox" id="darkModeToggle">
+        <span class="slider"></span>
+    </label>
    <div id="container">
     <div id="game">
         <header>
