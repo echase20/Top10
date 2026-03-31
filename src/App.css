@@ -857,7 +857,31 @@ body {
 /* ===== Responsive ===== */
 @media (max-width: 580px) {
   .columns-wrapper {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.375rem;
+  }
+
+  .main {
+    padding: 0.5rem 0.5rem 2rem;
+  }
+
+  .item-tile {
+    font-size: 0.75rem;
+    padding: 0.45rem 0.5rem;
+  }
+
+  .slot {
+    padding: 0.25rem 0.375rem;
+    min-height: 34px;
+  }
+
+  .slot-item-content {
+    font-size: 0.75rem;
+  }
+
+  .slot-number {
+    font-size: 0.65rem;
+    min-width: 1rem;
   }
 
   .source-items {
