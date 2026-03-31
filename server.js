@@ -56,7 +56,7 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }))
 // Production: serve the built React app
 // ---------------------------------------------------------------------------
 if (IS_PROD) {
-  const distPath = path.join(__dirname, '..', 'dist')
+  const distPath = path.join(__dirname, 'dist')
   app.use(express.static(distPath))
   app.get('*', (_req, res) => res.sendFile(path.join(distPath, 'index.html')))
 }

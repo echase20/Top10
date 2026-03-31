@@ -5,9 +5,9 @@ node_modules/
 dist/
 
 # Database (never commit the live data file)
-server/database.sqlite
-server/database.sqlite-wal
-server/database.sqlite-shm
+database.sqlite
+database.sqlite-wal
+database.sqlite-shm
 
 # Environment variables
 .env
