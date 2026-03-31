@@ -53,6 +53,19 @@ app.post('/api/opinion', (req, res) => {
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 
 // ---------------------------------------------------------------------------
+// Dev: view all opinion responses
+// Requires ?key=DEV_KEY query param to prevent public access
+// ---------------------------------------------------------------------------
+app.get('/api/dev/responses', (req, res) => {
+  const devKey = process.env.DEV_KEY
+  if (!devKey || req.query.key !== devKey) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+  const rows = db.prepare('SELECT * FROM opinion_responses ORDER BY submitted_at DESC').all()
+  res.json(rows)
+})
+
+// ---------------------------------------------------------------------------
 // Production: serve the built React app
 // ---------------------------------------------------------------------------
 if (IS_PROD) {
