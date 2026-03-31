@@ -4,7 +4,10 @@ import path from 'path'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const db = new Database(path.join(__dirname, 'database.sqlite'))
+// In production, DB_PATH is set to a persistent volume (e.g. /data/database.sqlite)
+// In dev, it falls back to server/database.sqlite
+const dbPath = process.env.DB_PATH || path.join(__dirname, 'database.sqlite')
+const db = new Database(dbPath)
 
 db.pragma('journal_mode = WAL')
 
