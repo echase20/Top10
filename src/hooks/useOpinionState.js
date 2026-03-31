@@ -173,7 +173,11 @@ export function useOpinionState() {
         sessionId: getSessionId(),
         ranking,
       }),
-    }).catch(() => {
+    })
+      .then(res => {
+        if (!res.ok) res.json().then(e => console.warn('[top10] opinion submit failed:', e))
+      })
+      .catch(err => {
       // Server unavailable — submission is still saved locally
     })
   }, [isSubmittable, gameStatus, rightItems, dailyPuzzle.id])
