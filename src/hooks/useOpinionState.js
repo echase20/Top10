@@ -1,11 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { puzzles } from '../data/puzzles'
-import { shuffleArray, getPuzzleIndex } from '../utils/gameLogic'
+import { shuffleArray, getPuzzleIndex, getTodayStrET } from '../utils/gameLogic'
 import { getSessionId } from '../utils/session'
-
-function getTodayStr() {
-  return new Date().toISOString().split('T')[0]
-}
 
 function getTodayPuzzle() {
   const devId = localStorage.getItem('top10_dev_puzzleId')
@@ -13,15 +9,16 @@ function getTodayPuzzle() {
     const found = puzzles.find(p => p.id === Number(devId))
     if (found) return found
   }
-  const today = getTodayStr()
+  const today = getTodayStrET()
   const idx = getPuzzleIndex(today)
   return puzzles[idx % puzzles.length]
 }
 
 export function useOpinionState() {
+  const todayET = getTodayStrET()
   const dailyPuzzle = getTodayPuzzle()
   const puzzle = dailyPuzzle.opinionPuzzle
-  const gameKey = `top10_opinion_${dailyPuzzle.id}`
+  const gameKey = `top10_opinion_${todayET}_${dailyPuzzle.id}`
 
   const initGame = () => {
     try {

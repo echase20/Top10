@@ -10,6 +10,11 @@ const app = express()
 const PORT = process.env.PORT || 3001
 const IS_PROD = process.env.NODE_ENV === 'production'
 
+// Returns current datetime as a string in ET (e.g. "2026-03-31 23:59:59")
+function getNowET() {
+  return new Date().toLocaleString('sv-SE', { timeZone: 'America/New_York' })
+}
+
 if (!IS_PROD) {
   app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }))
 }
@@ -34,8 +39,8 @@ app.post('/api/opinion', (req, res) => {
 
   try {
     db.prepare(
-      'INSERT INTO opinion_responses (puzzle_id, session_id, ranking) VALUES (?, ?, ?)',
-    ).run(puzzleId, sessionId.trim(), JSON.stringify(ranking))
+      'INSERT INTO opinion_responses (puzzle_id, session_id, ranking, submitted_at) VALUES (?, ?, ?, ?)',
+    ).run(puzzleId, sessionId.trim(), JSON.stringify(ranking), getNowET())
 
     return res.json({ success: true })
   } catch (err) {

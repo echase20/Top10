@@ -1,3 +1,8 @@
+// Returns today's date string in ET timezone (YYYY-MM-DD)
+export function getTodayStrET() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
+}
+
 export function shuffleArray(arr) {
   const shuffled = [...arr]
   for (let i = shuffled.length - 1; i > 0; i--) {

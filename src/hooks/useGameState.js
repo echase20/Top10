@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { puzzles } from '../data/puzzles'
-import { evaluateAttempt, isWin, shuffleArray, getPuzzleIndex } from '../utils/gameLogic'
+import { evaluateAttempt, isWin, shuffleArray, getPuzzleIndex, getTodayStrET } from '../utils/gameLogic'
 
 const MAX_ATTEMPTS = 5
 const STATS_KEY = 'top10_stats'
@@ -32,10 +32,6 @@ function saveStats(stats) {
   } catch {}
 }
 
-function getTodayStr() {
-  return new Date().toISOString().split('T')[0]
-}
-
 function getTodayPuzzle() {
   // Dev override: lets the DevPanel switch puzzles without changing the date
   const devId = localStorage.getItem('top10_dev_puzzleId')
@@ -43,14 +39,15 @@ function getTodayPuzzle() {
     const found = puzzles.find(p => p.id === Number(devId))
     if (found) return found
   }
-  const today = getTodayStr()
+  const today = getTodayStrET()
   const idx = getPuzzleIndex(today)
   return puzzles[idx % puzzles.length]
 }
 
 export function useGameState() {
+  const todayET = getTodayStrET()
   const puzzle = getTodayPuzzle()
-  const gameKey = `top10_game_${puzzle.id}`
+  const gameKey = `top10_game_${todayET}_${puzzle.id}`
 
   const [stats, setStats] = useState(loadStats)
 
@@ -211,7 +208,7 @@ export function useGameState() {
     const newStatus = won ? 'won' : newAttemptCount >= MAX_ATTEMPTS ? 'lost' : 'playing'
 
     if (newStatus !== 'playing') {
-      const today = getTodayStr()
+      const today = getTodayStrET()
       setStats(prev => {
         const next = { ...prev, gamesPlayed: prev.gamesPlayed + 1, lastPlayed: today }
         if (won) {
