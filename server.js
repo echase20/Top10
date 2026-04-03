@@ -42,6 +42,10 @@ app.post('/api/opinion', (req, res) => {
       'INSERT INTO opinion_responses (puzzle_id, session_id, ranking, submitted_at) VALUES (?, ?, ?, ?)',
     ).run(puzzleId, sessionId.trim(), JSON.stringify(ranking), getNowET())
 
+    // Force WAL checkpoint so the row is immediately visible on disk
+    db.pragma('wal_checkpoint(FULL)')
+
+    console.log(`[opinion] recorded puzzle=${puzzleId} session=${sessionId.trim().slice(0, 8)}…`)
     return res.json({ success: true })
   } catch (err) {
     if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
