@@ -890,13 +890,46 @@ body {
   padding: 0 0.5rem;
 }
 
-.welcome-points li {
+.welcome-point {
   font-size: 0.9rem;
   color: var(--text-muted);
   line-height: 1.5;
   padding-left: 1rem;
   border-left: 2px solid var(--border-light);
 }
+
+.welcome-subpoints {
+  list-style: none;
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0;
+}
+
+.welcome-subpoint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding-left: 0.5rem;
+  border-left: none;
+}
+
+.welcome-feedback-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.welcome-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.welcome-swatch.feedback-correct { background: var(--correct); }
+.welcome-swatch.feedback-close   { background: var(--close); }
+.welcome-swatch.feedback-wrong   { background: var(--wrong); }
 
 .welcome-nav {
   display: flex;
