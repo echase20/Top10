@@ -161,22 +161,24 @@ export function useOpinionState() {
     }))
     setSelectedItem(null)
 
-    // Fire-and-forget: record the response in the database
+    // Record the response in the database
+    const payload = {
+      puzzleId: dailyPuzzle.id,
+      sessionId: getSessionId(),
+      ranking,
+    }
+    console.log('[top10] submitting opinion:', payload)
     fetch('/api/opinion', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        puzzleId: dailyPuzzle.id,
-        sessionId: getSessionId(),
-        ranking,
-      }),
+      body: JSON.stringify(payload),
     })
       .then(res => {
-        if (!res.ok) res.json().then(e => console.warn('[top10] opinion submit failed:', e))
+        console.log('[top10] opinion response status:', res.status)
+        return res.json()
       })
-      .catch(err => {
-      // Server unavailable — submission is still saved locally
-    })
+      .then(data => console.log('[top10] opinion response body:', data))
+      .catch(err => console.error('[top10] opinion fetch error:', err))
   }, [isSubmittable, gameStatus, rightItems, dailyPuzzle.id])
 
   const resetGame = useCallback(() => {
