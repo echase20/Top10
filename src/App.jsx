@@ -3,7 +3,7 @@ import Header from './components/Header'
 import GameBoard from './components/GameBoard'
 import OpinionBoard from './components/OpinionBoard'
 import StatsModal from './components/StatsModal'
-import WelcomeModal, { hasSeenToday } from './components/WelcomeModal'
+import WelcomeModal from './components/WelcomeModal'
 import DevPanel from './components/DevPanel'
 import { useGameState } from './hooks/useGameState'
 import { useOpinionState } from './hooks/useOpinionState'
@@ -11,7 +11,7 @@ import './App.css'
 
 export default function App() {
   const [showStats, setShowStats] = useState(false)
-  const [showWelcome, setShowWelcome] = useState(!hasSeenToday())
+  const [showWelcome, setShowWelcome] = useState(true)
   const [activeTab, setActiveTab] = useState('ranking')
   const game = useGameState()
   const opinion = useOpinionState()
