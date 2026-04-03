@@ -858,6 +858,7 @@ body {
 .welcome-modal {
   position: relative;
   max-width: 480px;
+  max-height: 85vh;
   min-height: 220px;
   display: flex;
   flex-direction: column;
@@ -872,6 +873,8 @@ body {
 
 .welcome-page {
   padding: 0.5rem 0.25rem 1rem;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .welcome-title {
