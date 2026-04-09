@@ -70,23 +70,28 @@ export function useGameState() {
       })
   }, [yesterdayPuzzle.id])
 
-  // Full puzzle with correctRank — only valid when community data is available
+  // Build puzzle with correctRank once community ranking is loaded.
+  // Falls back to a static rankingPuzzle on the puzzle entry if one exists and no responses are in yet.
   const puzzle = useMemo(() => {
-    const base = {
-      id: yesterdayPuzzle.id,
-      category: basePuzzle.category,
-      question: basePuzzle.question,
-      items: basePuzzle.items,
+    if (!communityRanking.loaded) {
+      return { id: yesterdayPuzzle.id, ...basePuzzle }
     }
-    if (!communityRanking.loaded || !communityRanking.hasData) return base
-    return {
-      ...base,
-      items: basePuzzle.items.map(item => ({
-        ...item,
-        correctRank: communityRanking.rankedIds.indexOf(item.id) + 1,
-      })),
+    if (communityRanking.hasData) {
+      return {
+        id: yesterdayPuzzle.id,
+        category: basePuzzle.category,
+        question: basePuzzle.question,
+        items: basePuzzle.items.map(item => ({
+          ...item,
+          correctRank: communityRanking.rankedIds.indexOf(item.id) + 1,
+        })),
+      }
     }
-  }, [yesterdayPuzzle.id, basePuzzle, communityRanking])
+    if (yesterdayPuzzle.rankingPuzzle) {
+      return { id: yesterdayPuzzle.id, ...yesterdayPuzzle.rankingPuzzle }
+    }
+    return { id: yesterdayPuzzle.id, ...basePuzzle }
+  }, [yesterdayPuzzle, basePuzzle, communityRanking])
 
   const initGame = () => {
     try {
@@ -235,7 +240,8 @@ export function useGameState() {
 
   const handleSubmit = useCallback(() => {
     if (!isSubmittable || gameStatus !== 'playing' || inFeedbackMode) return
-    if (!communityRanking.loaded || !communityRanking.hasData) return
+    if (!communityRanking.loaded) return
+    if (!communityRanking.hasData && !yesterdayPuzzle.rankingPuzzle) return
 
     const feedback = evaluateAttempt(rightItems, puzzle)
     const won = isWin(feedback)
@@ -320,7 +326,7 @@ export function useGameState() {
   return {
     puzzle,
     rankingLoaded: communityRanking.loaded,
-    hasData: communityRanking.hasData,
+    hasData: communityRanking.hasData || !!yesterdayPuzzle.rankingPuzzle,
     leftItems,
     rightItems,
     selectedItem,

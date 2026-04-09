@@ -74,6 +74,24 @@ export const puzzles = [
         { id: 10, name: 'Control the weather' },
       ],
     },
+    // Temporary fallback used when no community responses exist yet
+    rankingPuzzle: {
+      category: 'Cinema History',
+      question: 'Rank these iconic films from oldest to newest',
+      hint: 'By original theatrical release year',
+      items: [
+        { id: 1, name: 'Gone with the Wind', correctRank: 1 },
+        { id: 2, name: 'Casablanca', correctRank: 2 },
+        { id: 3, name: 'Psycho', correctRank: 3 },
+        { id: 4, name: '2001: A Space Odyssey', correctRank: 4 },
+        { id: 5, name: 'The Godfather', correctRank: 5 },
+        { id: 6, name: 'Star Wars', correctRank: 6 },
+        { id: 7, name: 'E.T. the Extra-Terrestrial', correctRank: 7 },
+        { id: 8, name: 'Jurassic Park', correctRank: 8 },
+        { id: 9, name: 'The Dark Knight', correctRank: 9 },
+        { id: 10, name: 'Parasite', correctRank: 10 },
+      ],
+    },
   },
   {
     id: 4,
