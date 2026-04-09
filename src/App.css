@@ -404,6 +404,19 @@ body {
   box-shadow: 0 0 0 1px var(--selected);
 }
 
+/* ===== Last-placement hints (shown when selecting an item from left) ===== */
+.slot.slot-hint-close {
+  border-color: var(--close);
+  border-style: dashed;
+  background: rgba(181, 159, 59, 0.15);
+}
+
+.slot.slot-hint-wrong {
+  border-color: var(--wrong);
+  border-style: dashed;
+  background: rgba(155, 34, 38, 0.15);
+}
+
 .slot-number {
   font-size: 0.72rem;
   font-weight: 700;

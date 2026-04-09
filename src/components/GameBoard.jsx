@@ -1,6 +1,6 @@
 import ItemTile from './ItemTile'
 
-const MAX_ATTEMPTS = 5
+const MAX_ATTEMPTS = 3
 
 export default function GameBoard({ game }) {
   const {
@@ -22,6 +22,18 @@ export default function GameBoard({ game }) {
     attemptsRemaining,
     correctAnswer,
   } = game
+
+  // When a left-column item is selected, show where it was placed last attempt
+  const lastPlacementHint = (() => {
+    if (!selectedItem || selectedItem.source !== 'left') return null
+    if (attempts.length === 0) return null
+    const lastAttempt = attempts[attempts.length - 1]
+    const slotIndex = lastAttempt.items.findIndex(i => i && i.id === selectedItem.item.id)
+    if (slotIndex === -1) return null
+    const feedback = lastAttempt.feedback[slotIndex]
+    if (feedback === 'correct') return null
+    return { index: slotIndex, feedback }
+  })()
 
   const isPlaying = gameStatus === 'playing'
   const canInteract = isPlaying && !inFeedbackMode
@@ -112,6 +124,7 @@ export default function GameBoard({ game }) {
               const isSlotSelected =
                 !inFeedbackMode && !isLocked && selectedItem?.source === 'right' && selectedItem?.index === index
               const hasSelection = canInteract && !!selectedItem
+              const isHintSlot = canInteract && lastPlacementHint?.index === index
 
               return (
                 <div
@@ -123,6 +136,7 @@ export default function GameBoard({ game }) {
                     isSlotSelected ? 'slot-selected' : '',
                     !isLocked && hasSelection && !item ? 'slot-droppable' : '',
                     fb ? `feedback-${fb}` : '',
+                    isHintSlot ? `slot-hint-${lastPlacementHint.feedback}` : '',
                   ]
                     .filter(Boolean)
                     .join(' ')}
