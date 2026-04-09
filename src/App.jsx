@@ -16,14 +16,18 @@ export default function App() {
   const game = useGameState()
   const opinion = useOpinionState()
 
-  const { puzzle, gameStatus, attemptsRemaining, stats } = game
+  const { puzzle, rankingLoaded, hasData, gameStatus, attemptsRemaining, stats } = game
 
   const rankingStatus =
-    gameStatus === 'playing'
-      ? `${attemptsRemaining} attempt${attemptsRemaining !== 1 ? 's' : ''} remaining`
-      : gameStatus === 'won'
-        ? 'You got it!'
-        : 'Better luck tomorrow!'
+    !rankingLoaded
+      ? 'Loading community rankings…'
+      : !hasData
+        ? 'No community responses yet — play the opinion game first!'
+        : gameStatus === 'playing'
+          ? `${attemptsRemaining} attempt${attemptsRemaining !== 1 ? 's' : ''} remaining`
+          : gameStatus === 'won'
+            ? 'You got it!'
+            : 'Better luck tomorrow!'
 
   return (
     <div className="app">
@@ -51,10 +55,9 @@ export default function App() {
             <div className="puzzle-info">
               <span className="category-badge">{puzzle.category}</span>
               <h2 className="question">{puzzle.question}</h2>
-              {puzzle.hint && <p className="hint">{puzzle.hint}</p>}
               <p className="attempts-remaining">{rankingStatus}</p>
             </div>
-            <GameBoard game={game} />
+            {rankingLoaded && hasData && <GameBoard game={game} />}
           </>
         )}
 

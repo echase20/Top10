@@ -57,6 +57,45 @@ app.post('/api/opinion', (req, res) => {
 })
 
 // ---------------------------------------------------------------------------
+// GET /api/opinion/aggregate/:puzzleId
+// Returns items sorted by average community rank (ascending)
+// ---------------------------------------------------------------------------
+app.get('/api/opinion/aggregate/:puzzleId', (req, res) => {
+  const puzzleId = Number(req.params.puzzleId)
+  if (!Number.isInteger(puzzleId)) {
+    return res.status(400).json({ error: 'Invalid puzzleId' })
+  }
+
+  const rows = db.prepare('SELECT ranking FROM opinion_responses WHERE puzzle_id = ?').all(puzzleId)
+  if (rows.length === 0) {
+    return res.json({ hasData: false, rankedIds: [] })
+  }
+
+  const positionSums = {}
+  const positionCounts = {}
+
+  for (const row of rows) {
+    const ranking = JSON.parse(row.ranking) // array of item ids, index 0 = rank 1
+    ranking.forEach((itemId, index) => {
+      if (positionSums[itemId] === undefined) {
+        positionSums[itemId] = 0
+        positionCounts[itemId] = 0
+      }
+      positionSums[itemId] += index + 1
+      positionCounts[itemId]++
+    })
+  }
+
+  const averages = Object.keys(positionSums).map(id => ({
+    id: Number(id),
+    avg: positionSums[id] / positionCounts[id],
+  }))
+  averages.sort((a, b) => a.avg - b.avg)
+
+  return res.json({ hasData: true, rankedIds: averages.map(x => x.id) })
+})
+
+// ---------------------------------------------------------------------------
 // Health check
 // ---------------------------------------------------------------------------
 app.get('/api/health', (_req, res) => res.json({ ok: true }))

@@ -31,7 +31,7 @@ export default function DevPanel({ game, opinion }) {
           <div className="dev-status">
             <span>Puzzle: <strong>#{puzzle.id} — {puzzle.category}</strong></span>
             <span>Status: <strong>{gameStatus}</strong></span>
-            <span>Attempts: <strong>{attempts.length} / 5</strong></span>
+            <span>Attempts: <strong>{attempts.length} / 3</strong></span>
             <span>Feedback: <strong>{lastFeedback ? 'showing' : 'hidden'}</strong></span>
           </div>
 

@@ -1,8 +1,8 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { puzzles } from '../data/puzzles'
-import { evaluateAttempt, isWin, shuffleArray, getPuzzleIndex, getTodayStrET } from '../utils/gameLogic'
+import { evaluateAttempt, isWin, shuffleArray, getPuzzleIndex, getTodayStrET, getYesterdayStrET } from '../utils/gameLogic'
 
-const MAX_ATTEMPTS = 5
+const MAX_ATTEMPTS = 3
 const STATS_KEY = 'top10_stats'
 
 function getDefaultStats() {
@@ -11,7 +11,7 @@ function getDefaultStats() {
     gamesWon: 0,
     currentStreak: 0,
     maxStreak: 0,
-    guessDistribution: [0, 0, 0, 0, 0],
+    guessDistribution: [0, 0, 0],
     lastPlayed: null,
   }
 }
@@ -32,31 +32,68 @@ function saveStats(stats) {
   } catch {}
 }
 
-function getTodayPuzzle() {
-  // Dev override: lets the DevPanel switch puzzles without changing the date
+function getYesterdayPuzzle() {
   const devId = localStorage.getItem('top10_dev_puzzleId')
   if (devId !== null) {
     const found = puzzles.find(p => p.id === Number(devId))
-    if (found) return found
+    if (found) {
+      const prevIdx = puzzles.indexOf(found)
+      return puzzles[Math.max(0, prevIdx - 1)]
+    }
   }
-  const today = getTodayStrET()
-  const idx = getPuzzleIndex(today)
+  const yesterday = getYesterdayStrET()
+  const idx = getPuzzleIndex(yesterday)
   return puzzles[idx % puzzles.length]
 }
 
 export function useGameState() {
   const todayET = getTodayStrET()
-  const puzzle = getTodayPuzzle()
-  const gameKey = `top10_game_${todayET}_${puzzle.id}`
+  const yesterdayPuzzle = getYesterdayPuzzle()
+  const basePuzzle = yesterdayPuzzle.opinionPuzzle
+  const gameKey = `top10_game_${todayET}_${yesterdayPuzzle.id}`
 
   const [stats, setStats] = useState(loadStats)
+  const [communityRanking, setCommunityRanking] = useState({
+    loaded: false,
+    hasData: false,
+    rankedIds: [],
+  })
+
+  useEffect(() => {
+    fetch(`/api/opinion/aggregate/${yesterdayPuzzle.id}`)
+      .then(res => res.json())
+      .then(data => {
+        setCommunityRanking({ loaded: true, hasData: data.hasData, rankedIds: data.rankedIds || [] })
+      })
+      .catch(() => {
+        setCommunityRanking({ loaded: true, hasData: false, rankedIds: [] })
+      })
+  }, [yesterdayPuzzle.id])
+
+  // Full puzzle with correctRank — only valid when community data is available
+  const puzzle = useMemo(() => {
+    const base = {
+      id: yesterdayPuzzle.id,
+      category: basePuzzle.category,
+      question: basePuzzle.question,
+      items: basePuzzle.items,
+    }
+    if (!communityRanking.loaded || !communityRanking.hasData) return base
+    return {
+      ...base,
+      items: basePuzzle.items.map(item => ({
+        ...item,
+        correctRank: communityRanking.rankedIds.indexOf(item.id) + 1,
+      })),
+    }
+  }, [yesterdayPuzzle.id, basePuzzle, communityRanking])
 
   const initGame = () => {
     try {
       const saved = localStorage.getItem(gameKey)
       if (saved) {
         const state = JSON.parse(saved)
-        const itemMap = Object.fromEntries(puzzle.items.map(i => [i.id, i]))
+        const itemMap = Object.fromEntries(basePuzzle.items.map(i => [i.id, i]))
         return {
           leftItems: state.leftItemIds.map(id => itemMap[id]).filter(Boolean),
           rightItems: state.rightItemIds.map(id => (id != null ? itemMap[id] : null)),
@@ -71,7 +108,7 @@ export function useGameState() {
       }
     } catch {}
     return {
-      leftItems: shuffleArray([...puzzle.items]),
+      leftItems: shuffleArray([...basePuzzle.items]),
       rightItems: Array(10).fill(null),
       attempts: [],
       gameStatus: 'playing',
@@ -85,7 +122,6 @@ export function useGameState() {
 
   const { leftItems, rightItems, attempts, gameStatus, lastFeedback, lockedSlots } = gameState
 
-  // Persist game state on every change
   useEffect(() => {
     try {
       const toSave = {
@@ -105,7 +141,6 @@ export function useGameState() {
 
   const isSubmittable = rightItems.every(item => item !== null)
   const attemptsRemaining = MAX_ATTEMPTS - attempts.length
-  // Board is locked while feedback colors are showing
   const inFeedbackMode = lastFeedback !== null
 
   const placeItem = useCallback((item, fromSource, fromIndex, toIndex) => {
@@ -185,7 +220,7 @@ export function useGameState() {
       const { source, index: fromIndex, itemId } = dragData
       if (source === 'right' && lockedSlots[fromIndex]) return
       if (targetType === 'right' && lockedSlots[targetIndex]) return
-      const item = puzzle.items.find(i => i.id === itemId)
+      const item = basePuzzle.items.find(i => i.id === itemId)
       if (!item) return
 
       if (targetType === 'right') {
@@ -195,11 +230,12 @@ export function useGameState() {
         returnToLeft(item, fromIndex)
       }
     },
-    [puzzle, gameStatus, inFeedbackMode, lockedSlots, placeItem, returnToLeft],
+    [basePuzzle, gameStatus, inFeedbackMode, lockedSlots, placeItem, returnToLeft],
   )
 
   const handleSubmit = useCallback(() => {
     if (!isSubmittable || gameStatus !== 'playing' || inFeedbackMode) return
+    if (!communityRanking.loaded || !communityRanking.hasData) return
 
     const feedback = evaluateAttempt(rightItems, puzzle)
     const won = isWin(feedback)
@@ -229,12 +265,11 @@ export function useGameState() {
       ...prev,
       attempts: newAttempts,
       gameStatus: newStatus,
-      lastFeedback: feedback, // always show colors after submit
+      lastFeedback: feedback,
     }))
     setSelectedItem(null)
-  }, [isSubmittable, gameStatus, inFeedbackMode, rightItems, puzzle, attempts])
+  }, [isSubmittable, gameStatus, inFeedbackMode, rightItems, puzzle, attempts, communityRanking])
 
-  // Move non-correct items back to the left column and clear feedback
   const handleReset = useCallback(() => {
     setGameState(prev => {
       if (!prev.lastFeedback) return prev
@@ -260,14 +295,14 @@ export function useGameState() {
   }, [])
 
   const correctAnswer =
-    gameStatus === 'lost'
+    gameStatus === 'lost' && communityRanking.hasData
       ? [...puzzle.items].sort((a, b) => a.correctRank - b.correctRank)
       : null
 
   const resetGame = useCallback(() => {
     localStorage.removeItem(gameKey)
     setGameState({
-      leftItems: shuffleArray([...puzzle.items]),
+      leftItems: shuffleArray([...basePuzzle.items]),
       rightItems: Array(10).fill(null),
       attempts: [],
       gameStatus: 'playing',
@@ -275,7 +310,7 @@ export function useGameState() {
       lockedSlots: Array(10).fill(false),
     })
     setSelectedItem(null)
-  }, [gameKey, puzzle])
+  }, [gameKey, basePuzzle])
 
   const resetStats = useCallback(() => {
     localStorage.removeItem(STATS_KEY)
@@ -284,6 +319,8 @@ export function useGameState() {
 
   return {
     puzzle,
+    rankingLoaded: communityRanking.loaded,
+    hasData: communityRanking.hasData,
     leftItems,
     rightItems,
     selectedItem,

@@ -3,6 +3,13 @@ export function getTodayStrET() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
 }
 
+// Returns yesterday's date string in ET timezone (YYYY-MM-DD)
+export function getYesterdayStrET() {
+  const d = new Date()
+  d.setDate(d.getDate() - 1)
+  return d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
+}
+
 export function shuffleArray(arr) {
   const shuffled = [...arr]
   for (let i = shuffled.length - 1; i > 0; i--) {
