@@ -657,9 +657,15 @@ body {
 
 .modal-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.modal-header .close-btn {
+  position: absolute;
+  right: 0;
 }
 
 .modal-header h2 {

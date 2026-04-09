@@ -50,6 +50,10 @@ export function useGameState() {
   const todayET = getTodayStrET()
   const yesterdayPuzzle = getYesterdayPuzzle()
   const basePuzzle = yesterdayPuzzle.opinionPuzzle
+  // When a static rankingPuzzle fallback exists, use its items for the game board
+  const sourceItems = yesterdayPuzzle.rankingPuzzle
+    ? yesterdayPuzzle.rankingPuzzle.items
+    : basePuzzle.items
   const gameKey = `top10_game_${todayET}_${yesterdayPuzzle.id}`
 
   const [stats, setStats] = useState(loadStats)
@@ -98,7 +102,7 @@ export function useGameState() {
       const saved = localStorage.getItem(gameKey)
       if (saved) {
         const state = JSON.parse(saved)
-        const itemMap = Object.fromEntries(basePuzzle.items.map(i => [i.id, i]))
+        const itemMap = Object.fromEntries(sourceItems.map(i => [i.id, i]))
         return {
           leftItems: state.leftItemIds.map(id => itemMap[id]).filter(Boolean),
           rightItems: state.rightItemIds.map(id => (id != null ? itemMap[id] : null)),
@@ -113,7 +117,7 @@ export function useGameState() {
       }
     } catch {}
     return {
-      leftItems: shuffleArray([...basePuzzle.items]),
+      leftItems: shuffleArray([...sourceItems]),
       rightItems: Array(10).fill(null),
       attempts: [],
       gameStatus: 'playing',
@@ -225,7 +229,7 @@ export function useGameState() {
       const { source, index: fromIndex, itemId } = dragData
       if (source === 'right' && lockedSlots[fromIndex]) return
       if (targetType === 'right' && lockedSlots[targetIndex]) return
-      const item = basePuzzle.items.find(i => i.id === itemId)
+      const item = sourceItems.find(i => i.id === itemId)
       if (!item) return
 
       if (targetType === 'right') {
@@ -235,7 +239,7 @@ export function useGameState() {
         returnToLeft(item, fromIndex)
       }
     },
-    [basePuzzle, gameStatus, inFeedbackMode, lockedSlots, placeItem, returnToLeft],
+    [sourceItems, gameStatus, inFeedbackMode, lockedSlots, placeItem, returnToLeft],
   )
 
   const handleSubmit = useCallback(() => {
@@ -308,7 +312,7 @@ export function useGameState() {
   const resetGame = useCallback(() => {
     localStorage.removeItem(gameKey)
     setGameState({
-      leftItems: shuffleArray([...basePuzzle.items]),
+      leftItems: shuffleArray([...sourceItems]),
       rightItems: Array(10).fill(null),
       attempts: [],
       gameStatus: 'playing',
@@ -316,7 +320,7 @@ export function useGameState() {
       lockedSlots: Array(10).fill(false),
     })
     setSelectedItem(null)
-  }, [gameKey, basePuzzle])
+  }, [gameKey, sourceItems])
 
   const resetStats = useCallback(() => {
     localStorage.removeItem(STATS_KEY)

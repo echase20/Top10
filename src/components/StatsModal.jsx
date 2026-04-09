@@ -14,6 +14,23 @@ export default function StatsModal({ stats, onClose, gameStatus }) {
           </button>
         </div>
 
+        <div className="guess-dist">
+          <h3>Guess Distribution</h3>
+          {stats.guessDistribution.map((count, i) => (
+            <div key={i} className="dist-row">
+              <span className="dist-label">{i + 1}</span>
+              <div className="dist-bar-container">
+                <div
+                  className={`dist-bar ${gameStatus === 'won' && count > 0 ? 'active' : ''}`}
+                  style={{ width: `${Math.max((count / maxDist) * 100, count > 0 ? 8 : 0)}%` }}
+                >
+                  {count > 0 && <span>{count}</span>}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
         <div className="stats-grid">
           <div className="stat-item">
             <span className="stat-number">{stats.gamesPlayed}</span>
@@ -31,23 +48,6 @@ export default function StatsModal({ stats, onClose, gameStatus }) {
             <span className="stat-number">{stats.maxStreak}</span>
             <span className="stat-label">Max Streak</span>
           </div>
-        </div>
-
-        <div className="guess-dist">
-          <h3>Guess Distribution</h3>
-          {stats.guessDistribution.map((count, i) => (
-            <div key={i} className="dist-row">
-              <span className="dist-label">{i + 1}</span>
-              <div className="dist-bar-container">
-                <div
-                  className={`dist-bar ${gameStatus === 'won' && count > 0 ? 'active' : ''}`}
-                  style={{ width: `${Math.max((count / maxDist) * 100, count > 0 ? 8 : 0)}%` }}
-                >
-                  {count > 0 && <span>{count}</span>}
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </div>
