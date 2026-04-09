@@ -23,16 +23,19 @@ export default function GameBoard({ game }) {
     correctAnswer,
   } = game
 
-  // When a left-column item is selected, show where it was placed last attempt
-  const lastPlacementHint = (() => {
-    if (!selectedItem || selectedItem.source !== 'left') return null
-    if (attempts.length === 0) return null
-    const lastAttempt = attempts[attempts.length - 1]
-    const slotIndex = lastAttempt.items.findIndex(i => i && i.id === selectedItem.item.id)
-    if (slotIndex === -1) return null
-    const feedback = lastAttempt.feedback[slotIndex]
-    if (feedback === 'correct') return null
-    return { index: slotIndex, feedback }
+  // When a left-column item is selected, show every slot it was placed in across all attempts
+  const placementHints = (() => {
+    if (!selectedItem || selectedItem.source !== 'left') return {}
+    if (attempts.length === 0) return {}
+    const hints = {}
+    for (const attempt of attempts) {
+      const slotIndex = attempt.items.findIndex(i => i && i.id === selectedItem.item.id)
+      if (slotIndex === -1) continue
+      const feedback = attempt.feedback[slotIndex]
+      if (feedback === 'correct') continue
+      hints[slotIndex] = feedback
+    }
+    return hints
   })()
 
   const isPlaying = gameStatus === 'playing'
@@ -124,7 +127,7 @@ export default function GameBoard({ game }) {
               const isSlotSelected =
                 !inFeedbackMode && !isLocked && selectedItem?.source === 'right' && selectedItem?.index === index
               const hasSelection = canInteract && !!selectedItem
-              const isHintSlot = canInteract && lastPlacementHint?.index === index
+              const isHintSlot = canInteract && placementHints[index] !== undefined
 
               return (
                 <div
@@ -136,7 +139,7 @@ export default function GameBoard({ game }) {
                     isSlotSelected ? 'slot-selected' : '',
                     !isLocked && hasSelection && !item ? 'slot-droppable' : '',
                     fb ? `feedback-${fb}` : '',
-                    isHintSlot ? `slot-hint-${lastPlacementHint.feedback}` : '',
+                    isHintSlot ? `slot-hint-${placementHints[index]}` : '',
                   ]
                     .filter(Boolean)
                     .join(' ')}
