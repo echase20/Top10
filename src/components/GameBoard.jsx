@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react'
 import ItemTile from './ItemTile'
 
 const MAX_ATTEMPTS = 3
@@ -41,6 +42,70 @@ export default function GameBoard({ game }) {
   const isPlaying = gameStatus === 'playing'
   const canInteract = isPlaying && !inFeedbackMode
 
+  // ── Touch drag with haptic feedback ──────────────────────────────────────
+  const boardRef = useRef(null)
+  const touchDragRef = useRef(null) // { item, source, fromIndex, lastSlotIndex }
+
+  // Keep latest values accessible inside the effect without re-registering listeners
+  const canInteractRef = useRef(canInteract)
+  const lockedSlotsRef = useRef(lockedSlots)
+  const handleDropRef = useRef(handleDrop)
+  canInteractRef.current = canInteract
+  lockedSlotsRef.current = lockedSlots
+  handleDropRef.current = handleDrop
+
+  useEffect(() => {
+    const board = boardRef.current
+    if (!board) return
+
+    const getSlotIndex = el => {
+      const slotEl = el?.closest?.('[data-slot-index]')
+      return slotEl ? parseInt(slotEl.dataset.slotIndex, 10) : -1
+    }
+
+    const onTouchMove = e => {
+      if (!touchDragRef.current || !canInteractRef.current) return
+      e.preventDefault() // prevent page scroll while dragging an item
+      const touch = e.touches[0]
+      const target = document.elementFromPoint(touch.clientX, touch.clientY)
+      const slotIndex = getSlotIndex(target)
+      if (slotIndex !== -1 && slotIndex !== touchDragRef.current.lastSlotIndex) {
+        touchDragRef.current.lastSlotIndex = slotIndex
+        navigator.vibrate?.(12)
+      }
+    }
+
+    const onTouchEnd = e => {
+      const drag = touchDragRef.current
+      touchDragRef.current = null
+      if (!drag || !canInteractRef.current) return
+      const touch = e.changedTouches[0]
+      const target = document.elementFromPoint(touch.clientX, touch.clientY)
+      const slotIndex = getSlotIndex(target)
+      if (slotIndex !== -1 && !lockedSlotsRef.current[slotIndex]) {
+        handleDropRef.current('right', slotIndex, {
+          source: drag.source,
+          index: drag.fromIndex,
+          itemId: drag.item.id,
+        })
+      }
+    }
+
+    board.addEventListener('touchmove', onTouchMove, { passive: false })
+    board.addEventListener('touchend', onTouchEnd)
+    return () => {
+      board.removeEventListener('touchmove', onTouchMove)
+      board.removeEventListener('touchend', onTouchEnd)
+    }
+  }, []) // registered once; reads latest state via refs
+
+  const startTouchDrag = (item, source, index) => e => {
+    if (!canInteract) return
+    // Only start a drag if the touch moved off the item (not a tap)
+    touchDragRef.current = { item, source, fromIndex: index, lastSlotIndex: -1 }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   const buildDragData = (item, source, index) =>
     JSON.stringify({ source, index, itemId: item.id })
 
@@ -78,7 +143,7 @@ export default function GameBoard({ game }) {
   }
 
   return (
-    <div className="game-board-container">
+    <div className="game-board-container" ref={boardRef}>
       <div className="columns-wrapper">
         {/* Left column – source items */}
         <div
@@ -99,6 +164,7 @@ export default function GameBoard({ game }) {
                 isDraggable={canInteract}
                 onClick={() => canInteract && handleSelectItem(item, 'left', leftItems.indexOf(item))}
                 onDragStart={e => handleDragStart(e, item, 'left', leftItems.indexOf(item))}
+                onTouchStart={startTouchDrag(item, 'left', leftItems.indexOf(item))}
               />
             ))}
             {leftItems.length === 0 && (
@@ -132,6 +198,7 @@ export default function GameBoard({ game }) {
               return (
                 <div
                   key={index}
+                  data-slot-index={index}
                   className={[
                     'slot',
                     item ? 'slot-filled' : 'slot-empty',
@@ -153,6 +220,7 @@ export default function GameBoard({ game }) {
                       className={`slot-item-content ${isSlotSelected ? 'selected' : ''}`}
                       draggable={canInteract && !isLocked}
                       onDragStart={e => !isLocked && handleDragStart(e, item, 'right', index)}
+                      onTouchStart={!isLocked ? startTouchDrag(item, 'right', index) : undefined}
                     >
                       {item.name}
                     </div>
