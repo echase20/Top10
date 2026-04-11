@@ -42,11 +42,12 @@ export default function GameBoard({ game }) {
   const isPlaying = gameStatus === 'playing'
   const canInteract = isPlaying && !inFeedbackMode
 
-  // ── Touch drag with haptic feedback ──────────────────────────────────────
+  // ── Touch drag with ghost and haptic feedback ─────────────────────────────
   const boardRef = useRef(null)
+  const ghostRef = useRef(null)
   const touchDragRef = useRef(null) // { item, source, fromIndex, lastSlotIndex }
 
-  // Keep latest values accessible inside the effect without re-registering listeners
+  // Keep latest values accessible inside the effect without re-registering
   const canInteractRef = useRef(canInteract)
   const lockedSlotsRef = useRef(lockedSlots)
   const handleDropRef = useRef(handleDrop)
@@ -63,10 +64,23 @@ export default function GameBoard({ game }) {
       return slotEl ? parseInt(slotEl.dataset.slotIndex, 10) : -1
     }
 
+    const moveGhost = (x, y) => {
+      const g = ghostRef.current
+      if (!g) return
+      // Offset upward so the item floats above the finger
+      g.style.left = `${x}px`
+      g.style.top = `${y - 44}px`
+    }
+
+    const hideGhost = () => {
+      if (ghostRef.current) ghostRef.current.style.display = 'none'
+    }
+
     const onTouchMove = e => {
       if (!touchDragRef.current || !canInteractRef.current) return
-      e.preventDefault() // prevent page scroll while dragging an item
+      e.preventDefault()
       const touch = e.touches[0]
+      moveGhost(touch.clientX, touch.clientY)
       const target = document.elementFromPoint(touch.clientX, touch.clientY)
       const slotIndex = getSlotIndex(target)
       if (slotIndex !== -1 && slotIndex !== touchDragRef.current.lastSlotIndex) {
@@ -78,6 +92,7 @@ export default function GameBoard({ game }) {
     const onTouchEnd = e => {
       const drag = touchDragRef.current
       touchDragRef.current = null
+      hideGhost()
       if (!drag || !canInteractRef.current) return
       const touch = e.changedTouches[0]
       const target = document.elementFromPoint(touch.clientX, touch.clientY)
@@ -91,18 +106,32 @@ export default function GameBoard({ game }) {
       }
     }
 
+    const onTouchCancel = () => {
+      touchDragRef.current = null
+      hideGhost()
+    }
+
     board.addEventListener('touchmove', onTouchMove, { passive: false })
     board.addEventListener('touchend', onTouchEnd)
+    board.addEventListener('touchcancel', onTouchCancel)
     return () => {
       board.removeEventListener('touchmove', onTouchMove)
       board.removeEventListener('touchend', onTouchEnd)
+      board.removeEventListener('touchcancel', onTouchCancel)
     }
-  }, []) // registered once; reads latest state via refs
+  }, [])
 
   const startTouchDrag = (item, source, index) => e => {
     if (!canInteract) return
-    // Only start a drag if the touch moved off the item (not a tap)
+    const touch = e.touches[0]
     touchDragRef.current = { item, source, fromIndex: index, lastSlotIndex: -1 }
+    const g = ghostRef.current
+    if (g) {
+      g.textContent = item.name
+      g.style.display = 'flex'
+      g.style.left = `${touch.clientX}px`
+      g.style.top = `${touch.clientY - 44}px`
+    }
   }
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -144,6 +173,9 @@ export default function GameBoard({ game }) {
 
   return (
     <div className="game-board-container" ref={boardRef}>
+      {/* Ghost element that follows finger during touch drag */}
+      <div ref={ghostRef} className="drag-ghost" />
+
       <div className="columns-wrapper">
         {/* Left column – source items */}
         <div
@@ -234,7 +266,6 @@ export default function GameBoard({ game }) {
             })}
           </div>
 
-          {/* Submit / Reset / done buttons */}
           {isPlaying && !inFeedbackMode && (
             <button
               className={`submit-btn ${isSubmittable ? 'ready' : 'disabled'}`}
@@ -252,7 +283,6 @@ export default function GameBoard({ game }) {
         </div>
       </div>
 
-      {/* Correct answer revealed after a loss */}
       {correctAnswer && (
         <div className="correct-answer">
           <h3>Correct Ranking</h3>
