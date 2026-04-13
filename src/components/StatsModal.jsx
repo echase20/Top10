@@ -1,4 +1,4 @@
-export default function StatsModal({ stats, onClose, gameStatus }) {
+export default function StatsModal({ stats, onClose, gameStatus, onContinue }) {
   const winPct =
     stats.gamesPlayed > 0 ? Math.round((stats.gamesWon / stats.gamesPlayed) * 100) : 0
 
@@ -48,7 +48,11 @@ export default function StatsModal({ stats, onClose, gameStatus }) {
             <span className="stat-number">{stats.maxStreak}</span>
             <span className="stat-label">Max Streak</span>
           </div>
-        </div>
+        {onContinue && (
+          <button className="continue-btn" onClick={onContinue}>
+            Continue to Opinion Game →
+          </button>
+        )}
       </div>
     </div>
   )

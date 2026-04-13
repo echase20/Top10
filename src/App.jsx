@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Header from './components/Header'
 import GameBoard from './components/GameBoard'
 import OpinionBoard from './components/OpinionBoard'
@@ -10,13 +10,22 @@ import { useOpinionState } from './hooks/useOpinionState'
 import './App.css'
 
 export default function App() {
+  const [view, setView] = useState('ranking')
   const [showStats, setShowStats] = useState(false)
   const [showWelcome, setShowWelcome] = useState(true)
-  const [activeTab, setActiveTab] = useState('ranking')
   const game = useGameState()
   const opinion = useOpinionState()
 
   const { puzzle, rankingLoaded, hasData, gameStatus, attemptsRemaining, stats } = game
+
+  // Auto-show stats when the ranking game finishes (once per session)
+  const statsAutoShownRef = useRef(false)
+  useEffect(() => {
+    if ((gameStatus === 'won' || gameStatus === 'lost') && !statsAutoShownRef.current) {
+      statsAutoShownRef.current = true
+      setShowStats(true)
+    }
+  }, [gameStatus])
 
   const rankingStatus =
     !rankingLoaded
@@ -29,28 +38,19 @@ export default function App() {
             ? 'You got it!'
             : 'Better luck tomorrow!'
 
+  const handleContinueToOpinion = () => {
+    setShowStats(false)
+    setView('opinion')
+  }
+
+  const rankingDone = gameStatus === 'won' || gameStatus === 'lost'
+
   return (
     <div className="app">
       <Header onShowStats={() => setShowStats(true)} streak={stats.currentStreak} />
 
-
-      <div className="tab-nav">
-        <button
-          className={`tab-btn ${activeTab === 'ranking' ? 'active' : ''}`}
-          onClick={() => setActiveTab('ranking')}
-        >
-          #1 Daily Ranking
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'opinion' ? 'active' : ''}`}
-          onClick={() => setActiveTab('opinion')}
-        >
-          #2 Your Opinion
-        </button>
-      </div>
-
       <main className="main">
-        {activeTab === 'ranking' && (
+        {view === 'ranking' && (
           <>
             <div className="puzzle-info">
               <span className="category-badge">{puzzle.category}</span>
@@ -58,10 +58,15 @@ export default function App() {
               <p className="attempts-remaining">{rankingStatus}</p>
             </div>
             {rankingLoaded && hasData && <GameBoard game={game} />}
+            {rankingDone && (
+              <button className="continue-to-opinion-btn" onClick={() => setView('opinion')}>
+                Continue to Opinion Game →
+              </button>
+            )}
           </>
         )}
 
-        {activeTab === 'opinion' && (
+        {view === 'opinion' && (
           <>
             <div className="puzzle-info">
               <span className="category-badge opinion-badge">
@@ -80,7 +85,12 @@ export default function App() {
       </main>
 
       {showStats && (
-        <StatsModal stats={stats} onClose={() => setShowStats(false)} gameStatus={gameStatus} />
+        <StatsModal
+          stats={stats}
+          onClose={() => setShowStats(false)}
+          gameStatus={gameStatus}
+          onContinue={rankingDone && view === 'ranking' ? handleContinueToOpinion : null}
+        />
       )}
 
       {showWelcome && <WelcomeModal onClose={() => setShowWelcome(false)} />}

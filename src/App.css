@@ -103,38 +103,33 @@ body {
 }
 
 /* ===== Tab Navigation ===== */
-.tab-nav {
-  display: flex;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
-  position: sticky;
-  top: 53px;
-  z-index: 9;
-}
-
-.tab-btn {
-  flex: 1;
-  padding: 0.65rem 1rem;
-  background: none;
+/* ===== Continue buttons ===== */
+.continue-btn,
+.continue-to-opinion-btn {
+  display: block;
+  width: 100%;
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+  background: var(--correct);
   border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--text-muted);
-  font-size: 0.8rem;
+  border-radius: var(--radius);
+  color: #fff;
+  font-size: 0.9rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
   cursor: pointer;
-  transition: color 120ms, border-color 120ms;
-  margin-bottom: -1px;
+  transition: opacity 120ms;
 }
 
-.tab-btn:hover {
-  color: var(--text);
+.continue-btn:hover,
+.continue-to-opinion-btn:hover {
+  opacity: 0.85;
 }
 
-.tab-btn.active {
-  color: var(--text);
-  border-bottom-color: var(--text);
+.continue-to-opinion-btn {
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* ===== Opinion badge accent ===== */
