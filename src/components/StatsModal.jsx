@@ -48,6 +48,8 @@ export default function StatsModal({ stats, onClose, gameStatus, onContinue }) {
             <span className="stat-number">{stats.maxStreak}</span>
             <span className="stat-label">Max Streak</span>
           </div>
+        </div>
+
         {onContinue && (
           <button className="continue-btn" onClick={onContinue}>
             Continue to Opinion Game →
