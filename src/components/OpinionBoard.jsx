@@ -48,16 +48,18 @@ export default function OpinionBoard({ game }) {
   if (gameStatus === 'submitted') {
     return (
       <div className="game-board-container">
-        <div className="opinion-submitted">
-          <p className="opinion-submitted-msg">Your ranking has been recorded!</p>
-          <ol className="submitted-list">
-            {submittedRanking.map((item, i) => (
-              <li key={item.id}>
-                <span className="rank-num">{i + 1}.</span>
-                {item.name}
-              </li>
-            ))}
-          </ol>
+        <div className="result-view">
+          <p className="result-label">Your ranking has been recorded!</p>
+          {submittedRanking.map((item, i) => (
+            <div
+              key={item.id}
+              className="result-item result-opinion"
+              style={{ animationDelay: `${i * 0.07}s` }}
+            >
+              <span className="result-rank">{i + 1}</span>
+              <span className="result-name">{item.name}</span>
+            </div>
+          ))}
         </div>
       </div>
     )

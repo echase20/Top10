@@ -69,6 +69,9 @@ export default function App() {
         {view === 'opinion' && (
           <>
             <div className="puzzle-info">
+              <button className="back-btn" onClick={() => setView('ranking')}>
+                ← Back to Puzzle
+              </button>
               <span className="category-badge opinion-badge">
                 {opinion.puzzle.category}
               </span>

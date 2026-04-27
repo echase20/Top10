@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import ItemTile from './ItemTile'
 
 const MAX_ATTEMPTS = 3
@@ -24,36 +24,34 @@ export default function GameBoard({ game }) {
     correctAnswer,
   } = game
 
-  // When a left-column item is selected, show every slot it was placed in across all attempts
-  const placementHints = (() => {
-    if (!selectedItem || selectedItem.source !== 'left') return {}
-    if (attempts.length === 0) return {}
-    const hints = {}
-    for (const attempt of attempts) {
-      const slotIndex = attempt.items.findIndex(i => i && i.id === selectedItem.item.id)
-      if (slotIndex === -1) continue
-      const feedback = attempt.feedback[slotIndex]
-      if (feedback === 'correct') continue
-      hints[slotIndex] = feedback
-    }
-    return hints
-  })()
-
   const isPlaying = gameStatus === 'playing'
   const canInteract = isPlaying && !inFeedbackMode
+  const gameOver = gameStatus === 'won' || gameStatus === 'lost'
 
-  // ── Touch drag with ghost and haptic feedback ─────────────────────────────
+  // Show result view after a short delay so the player sees the final feedback colors first
+  const [showResult, setShowResult] = useState(() => gameOver)
+  useEffect(() => {
+    if (gameOver) {
+      const t = setTimeout(() => setShowResult(true), 1000)
+      return () => clearTimeout(t)
+    }
+    if (gameStatus === 'playing') setShowResult(false)
+  }, [gameStatus, gameOver])
+
+  // ── Touch drag tracking (for haptic + ghost + hints) ─────────────────────
   const boardRef = useRef(null)
   const ghostRef = useRef(null)
-  const touchDragRef = useRef(null) // { item, source, fromIndex, lastSlotIndex }
+  const touchDragRef = useRef(null)
+  const [touchActiveItem, setTouchActiveItem] = useState(null)
 
-  // Keep latest values accessible inside the effect without re-registering
   const canInteractRef = useRef(canInteract)
   const lockedSlotsRef = useRef(lockedSlots)
   const handleDropRef = useRef(handleDrop)
+  const setTouchActiveItemRef = useRef(setTouchActiveItem)
   canInteractRef.current = canInteract
   lockedSlotsRef.current = lockedSlots
   handleDropRef.current = handleDrop
+  setTouchActiveItemRef.current = setTouchActiveItem
 
   useEffect(() => {
     const board = boardRef.current
@@ -67,7 +65,6 @@ export default function GameBoard({ game }) {
     const moveGhost = (x, y) => {
       const g = ghostRef.current
       if (!g) return
-      // Offset upward so the item floats above the finger
       g.style.left = `${x}px`
       g.style.top = `${y - 44}px`
     }
@@ -93,6 +90,7 @@ export default function GameBoard({ game }) {
       const drag = touchDragRef.current
       touchDragRef.current = null
       hideGhost()
+      setTouchActiveItemRef.current(null)
       if (!drag || !canInteractRef.current) return
       const touch = e.changedTouches[0]
       const target = document.elementFromPoint(touch.clientX, touch.clientY)
@@ -109,6 +107,7 @@ export default function GameBoard({ game }) {
     const onTouchCancel = () => {
       touchDragRef.current = null
       hideGhost()
+      setTouchActiveItemRef.current(null)
     }
 
     board.addEventListener('touchmove', onTouchMove, { passive: false })
@@ -125,6 +124,7 @@ export default function GameBoard({ game }) {
     if (!canInteract) return
     const touch = e.touches[0]
     touchDragRef.current = { item, source, fromIndex: index, lastSlotIndex: -1 }
+    setTouchActiveItem(item)
     const g = ghostRef.current
     if (g) {
       g.textContent = item.name
@@ -134,6 +134,22 @@ export default function GameBoard({ game }) {
     }
   }
   // ─────────────────────────────────────────────────────────────────────────
+
+  // Show placement hints for the active item (selected OR being touch-dragged),
+  // regardless of whether it's coming from the left or right column
+  const activeItem = selectedItem?.item ?? touchActiveItem
+  const placementHints = (() => {
+    if (!activeItem || attempts.length === 0) return {}
+    const hints = {}
+    for (const attempt of attempts) {
+      const slotIndex = attempt.items.findIndex(i => i && i.id === activeItem.id)
+      if (slotIndex === -1) continue
+      const feedback = attempt.feedback[slotIndex]
+      if (feedback === 'correct') continue
+      hints[slotIndex] = feedback
+    }
+    return hints
+  })()
 
   const buildDragData = (item, source, index) =>
     JSON.stringify({ source, index, itemId: item.id })
@@ -150,11 +166,7 @@ export default function GameBoard({ game }) {
   }
 
   const parseDrop = e => {
-    try {
-      return JSON.parse(e.dataTransfer.getData('application/json'))
-    } catch {
-      return null
-    }
+    try { return JSON.parse(e.dataTransfer.getData('application/json')) } catch { return null }
   }
 
   const handleDropOnRight = (e, targetIndex) => {
@@ -171,13 +183,18 @@ export default function GameBoard({ game }) {
     if (data && data.source === 'right') handleDrop('left', null, data)
   }
 
+  // Items to display in the result view
+  const resultItems = gameStatus === 'won'
+    ? rightItems.filter(Boolean)
+    : correctAnswer ?? []
+
   return (
     <div className="game-board-container" ref={boardRef}>
-      {/* Ghost element that follows finger during touch drag */}
       <div ref={ghostRef} className="drag-ghost" />
 
-      <div className="columns-wrapper">
-        {/* Left column – source items */}
+      {/* Two-column board — hidden once result slides in */}
+      <div className={`columns-wrapper${showResult ? ' result-hidden' : ''}`}>
+        {/* Left column */}
         <div
           className={`column source-column ${inFeedbackMode ? 'column-locked' : ''}`}
           onDragOver={handleDragOver}
@@ -205,16 +222,13 @@ export default function GameBoard({ game }) {
           </div>
         </div>
 
-        {/* Right column – ranked slots */}
+        {/* Right column */}
         <div className="column target-column">
           <div className="column-header">
             <span>Your Ranking</span>
             <span className="attempt-dots">
               {Array.from({ length: MAX_ATTEMPTS }, (_, i) => (
-                <span
-                  key={i}
-                  className={`attempt-dot ${i < attempts.length ? 'used' : ''}`}
-                />
+                <span key={i} className={`attempt-dot ${i < attempts.length ? 'used' : ''}`} />
               ))}
             </span>
           </div>
@@ -223,7 +237,8 @@ export default function GameBoard({ game }) {
               const fb = lastFeedback ? lastFeedback[index] : null
               const isLocked = lockedSlots[index]
               const isSlotSelected =
-                !inFeedbackMode && !isLocked && selectedItem?.source === 'right' && selectedItem?.index === index
+                !inFeedbackMode && !isLocked &&
+                selectedItem?.source === 'right' && selectedItem?.index === index
               const hasSelection = canInteract && !!selectedItem
               const isHintSlot = canInteract && placementHints[index] !== undefined
 
@@ -239,9 +254,7 @@ export default function GameBoard({ game }) {
                     !isLocked && hasSelection && !item ? 'slot-droppable' : '',
                     fb ? `feedback-${fb}` : '',
                     isHintSlot ? `slot-hint-${placementHints[index]}` : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
+                  ].filter(Boolean).join(' ')}
                   onDragOver={handleDragOver}
                   onDrop={e => !isLocked && handleDropOnRight(e, index)}
                   onClick={() => !isLocked && canInteract && handleSlotClick(index)}
@@ -283,17 +296,22 @@ export default function GameBoard({ game }) {
         </div>
       </div>
 
-      {correctAnswer && (
-        <div className="correct-answer">
-          <h3>Correct Ranking</h3>
-          <ol className="correct-list">
-            {correctAnswer.map((item, i) => (
-              <li key={item.id}>
-                <span className="rank-num">{i + 1}.</span>
-                {item.name}
-              </li>
-            ))}
-          </ol>
+      {/* Result view — slides in after game ends */}
+      {showResult && (
+        <div className="result-view">
+          <p className="result-label">
+            {gameStatus === 'won' ? '🎉 You got it!' : 'Correct Ranking'}
+          </p>
+          {resultItems.map((item, i) => (
+            <div
+              key={item.id}
+              className={`result-item ${gameStatus === 'won' ? 'result-correct' : 'result-answer'}`}
+              style={{ animationDelay: `${i * 0.07}s` }}
+            >
+              <span className="result-rank">{i + 1}</span>
+              <span className="result-name">{item.name}</span>
+            </div>
+          ))}
         </div>
       )}
     </div>
