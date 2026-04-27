@@ -29,8 +29,8 @@ export default function GameBoard({ game }) {
 
   // Animation phases:
   //   'board'   → normal two-column layout
-  //   'sliding' → result items slide in below, columns still visible
-  //   'done'    → columns fade out, result centered
+  //   'sliding' → left column collapses, slot items animate (settle or slide-out)
+  //   'done'    → for loss: correct items slide into slots; for win: static
   const [phase, setPhase] = useState(() => gameOver ? 'done' : 'board')
   const phaseRef = useRef(phase)
 
@@ -43,14 +43,15 @@ export default function GameBoard({ game }) {
     if (phaseRef.current === 'board') {
       phaseRef.current = 'sliding'
       setPhase('sliding')
-      // 10 items × 150ms stagger + 600ms animation ≈ 2100ms; add buffer
+      // Loss: items slide out over ~1.2s; win: items settle over ~1.7s
+      const delay = gameStatus === 'lost' ? 1300 : 1900
       const t = setTimeout(() => {
         setPhase('done')
         phaseRef.current = 'done'
-      }, 2400)
+      }, delay)
       return () => clearTimeout(t)
     }
-  }, [gameOver])
+  }, [gameOver, gameStatus])
 
   // ── Desktop drag tracking (for placement hints) ───────────────────────────
   const [desktopDragItem, setDesktopDragItem] = useState(null)
@@ -150,9 +151,8 @@ export default function GameBoard({ game }) {
       g.style.top = `${touch.clientY - 44}px`
     }
   }
-  // ─────────────────────────────────────────────────────────────────────────
 
-  // Placement hints for any active item: selected, touch-dragged, or mouse-dragged
+  // Placement hints for any active item
   const activeItem = selectedItem?.item ?? touchActiveItem ?? desktopDragItem
   const placementHints = (() => {
     if (!activeItem || attempts.length === 0) return {}
@@ -202,19 +202,14 @@ export default function GameBoard({ game }) {
     if (data && data.source === 'right') handleDrop('left', null, data)
   }
 
-  const resultItems = gameStatus === 'won'
-    ? rightItems.filter(Boolean)
-    : correctAnswer ?? []
-
   return (
     <div className="game-board-container" ref={boardRef}>
       <div ref={ghostRef} className="drag-ghost" />
 
-      {/* Two-column board — fades out after result slides in */}
-      <div className={`columns-wrapper${phase === 'done' ? ' columns-fading' : ''}`}>
-        {/* Left column */}
+      <div className="columns-wrapper">
+        {/* Left column — collapses when game ends */}
         <div
-          className={`column source-column ${inFeedbackMode ? 'column-locked' : ''}`}
+          className={`column source-column ${inFeedbackMode ? 'column-locked' : ''} ${phase !== 'board' ? 'column-collapsing' : ''}`}
           onDragOver={handleDragOver}
           onDrop={handleDropOnLeft}
         >
@@ -241,10 +236,12 @@ export default function GameBoard({ game }) {
           </div>
         </div>
 
-        {/* Right column */}
+        {/* Right column — expands to center as left collapses */}
         <div className="column target-column">
           <div className="column-header">
-            <span>Your Ranking</span>
+            <span>
+              {phase !== 'board' && gameStatus === 'lost' ? 'Correct Ranking' : 'Your Ranking'}
+            </span>
             <span className="attempt-dots">
               {Array.from({ length: MAX_ATTEMPTS }, (_, i) => (
                 <span key={i} className={`attempt-dot ${i < attempts.length ? 'used' : ''}`} />
@@ -252,8 +249,12 @@ export default function GameBoard({ game }) {
             </span>
           </div>
           <div className="target-slots">
-            {rightItems.map((item, index) => {
-              const fb = lastFeedback ? lastFeedback[index] : null
+            {Array.from({ length: 10 }, (_, index) => {
+              // In 'done' phase for a loss, show the correct answer in each slot
+              const showingCorrect = phase === 'done' && gameStatus === 'lost' && correctAnswer
+              const displayItem = showingCorrect ? correctAnswer[index] : rightItems[index]
+              const fb = showingCorrect ? 'correct' : (lastFeedback ? lastFeedback[index] : null)
+
               const isLocked = lockedSlots[index]
               const isSlotSelected =
                 !inFeedbackMode && !isLocked &&
@@ -261,16 +262,33 @@ export default function GameBoard({ game }) {
               const hasSelection = canInteract && !!selectedItem
               const isHintSlot = canInteract && placementHints[index] !== undefined
 
+              // Per-slot animation during result phases
+              const slotStyle = (() => {
+                if (phase === 'sliding') {
+                  if (gameStatus === 'won') {
+                    return { animation: 'resultSettle 0.5s ease-out both', animationDelay: `${index * 0.12}s` }
+                  }
+                  if (gameStatus === 'lost') {
+                    return { animation: 'resultSlideOut 0.35s ease-in both', animationDelay: `${index * 0.09}s` }
+                  }
+                }
+                if (phase === 'done' && gameStatus === 'lost') {
+                  return { animation: 'resultSlideIn 0.5s ease-out both', animationDelay: `${index * 0.12}s` }
+                }
+                return {}
+              })()
+
               return (
                 <div
                   key={index}
                   data-slot-index={index}
+                  style={slotStyle}
                   className={[
                     'slot',
-                    item ? 'slot-filled' : 'slot-empty',
-                    isLocked ? 'slot-locked' : '',
+                    displayItem ? 'slot-filled' : 'slot-empty',
+                    isLocked && phase === 'board' ? 'slot-locked' : '',
                     isSlotSelected ? 'slot-selected' : '',
-                    !isLocked && hasSelection && !item ? 'slot-droppable' : '',
+                    !isLocked && hasSelection && !displayItem ? 'slot-droppable' : '',
                     fb ? `feedback-${fb}` : '',
                     isHintSlot ? `slot-hint-${placementHints[index]}` : '',
                   ].filter(Boolean).join(' ')}
@@ -279,15 +297,15 @@ export default function GameBoard({ game }) {
                   onClick={() => !isLocked && canInteract && handleSlotClick(index)}
                 >
                   <span className="slot-number">{index + 1}</span>
-                  {item ? (
+                  {displayItem ? (
                     <div
                       className={`slot-item-content ${isSlotSelected ? 'selected' : ''}`}
                       draggable={canInteract && !isLocked}
-                      onDragStart={e => !isLocked && handleDragStart(e, item, 'right', index)}
+                      onDragStart={e => !isLocked && handleDragStart(e, displayItem, 'right', index)}
                       onDragEnd={handleDragEnd}
-                      onTouchStart={!isLocked ? startTouchDrag(item, 'right', index) : undefined}
+                      onTouchStart={!isLocked ? startTouchDrag(displayItem, 'right', index) : undefined}
                     >
-                      {item.name}
+                      {displayItem.name}
                     </div>
                   ) : (
                     <span className="slot-placeholder">
@@ -315,25 +333,6 @@ export default function GameBoard({ game }) {
           )}
         </div>
       </div>
-
-      {/* Result view — items slide in one by one while board is still visible */}
-      {(phase === 'sliding' || phase === 'done') && (
-        <div className="result-view">
-          <p className="result-label">
-            {gameStatus === 'won' ? '🎉 You got it!' : 'Correct Ranking'}
-          </p>
-          {resultItems.map((item, i) => (
-            <div
-              key={item.id}
-              className={`result-item ${gameStatus === 'won' ? 'result-correct' : 'result-answer'}`}
-              style={{ animationDelay: `${i * 0.15}s` }}
-            >
-              <span className="result-rank">{i + 1}</span>
-              <span className="result-name">{item.name}</span>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   )
 }

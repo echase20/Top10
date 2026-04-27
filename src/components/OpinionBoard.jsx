@@ -45,32 +45,14 @@ export default function OpinionBoard({ game }) {
     if (data && data.source === 'right') handleDrop('left', null, data)
   }
 
-  if (gameStatus === 'submitted') {
-    return (
-      <div className="game-board-container">
-        <div className="result-view">
-          <p className="result-label">Your ranking has been recorded!</p>
-          {submittedRanking.map((item, i) => (
-            <div
-              key={item.id}
-              className="result-item result-opinion"
-              style={{ animationDelay: `${i * 0.15}s` }}
-            >
-              <span className="result-rank">{i + 1}</span>
-              <span className="result-name">{item.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    )
-  }
+  // submitted — handled inline below via gameStatus checks
 
   return (
     <div className="game-board-container">
       <div className="columns-wrapper">
-        {/* Left column */}
+        {/* Left column — collapses after submission */}
         <div
-          className="column source-column"
+          className={`column source-column ${gameStatus === 'submitted' ? 'column-collapsing' : ''}`}
           onDragOver={handleDragOver}
           onDrop={handleDropOnLeft}
         >
@@ -95,20 +77,24 @@ export default function OpinionBoard({ game }) {
           </div>
         </div>
 
-        {/* Right column */}
+        {/* Right column — expands to center after submission */}
         <div className="column target-column">
           <div className="column-header">
-            <span>Your Ranking</span>
+            <span>{gameStatus === 'submitted' ? 'Recorded! ✓' : 'Your Ranking'}</span>
           </div>
           <div className="target-slots">
             {rightItems.map((item, index) => {
               const isSlotSelected =
                 selectedItem?.source === 'right' && selectedItem?.index === index
               const hasSelection = isPlaying && !!selectedItem
+              const settleStyle = gameStatus === 'submitted'
+                ? { animation: 'resultSettle 0.5s ease-out both', animationDelay: `${index * 0.12}s` }
+                : {}
 
               return (
                 <div
                   key={index}
+                  style={settleStyle}
                   className={[
                     'slot',
                     item ? 'slot-filled' : 'slot-empty',
@@ -140,13 +126,15 @@ export default function OpinionBoard({ game }) {
             })}
           </div>
 
-          <button
-            className={`submit-btn ${isSubmittable ? 'ready' : 'disabled'}`}
-            onClick={handleSubmit}
-            disabled={!isSubmittable}
-          >
-            Submit My Ranking
-          </button>
+          {gameStatus !== 'submitted' && (
+            <button
+              className={`submit-btn ${isSubmittable ? 'ready' : 'disabled'}`}
+              onClick={handleSubmit}
+              disabled={!isSubmittable}
+            >
+              Submit My Ranking
+            </button>
+          )}
         </div>
       </div>
     </div>
