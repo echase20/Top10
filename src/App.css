@@ -271,12 +271,6 @@ body {
   flex-direction: column;
   gap: 0.5rem;
   z-index: 50;
-  transition: left 1.8s ease-in-out, transform 1.8s ease-in-out;
-}
-
-.result-overlay--center {
-  left: 50% !important;
-  transform: translateX(-50%);
 }
 
 @keyframes resultSettle {

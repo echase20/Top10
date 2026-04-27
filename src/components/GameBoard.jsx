@@ -32,6 +32,7 @@ export default function GameBoard({ game }) {
   const overlayTriggeredRef = useRef(false)
   const [overlay, setOverlay] = useState(null) // null | { rect, phase: 'start'|'center' }
 
+  // Step 1: when game ends, capture rect and render clone at start position
   useEffect(() => {
     if (!gameOver) {
       overlayTriggeredRef.current = false
@@ -43,15 +44,17 @@ export default function GameBoard({ game }) {
 
     const rect = targetColRef.current?.getBoundingClientRect()
     if (!rect) return
-
-    // Place clone exactly over the right column, then slide to center next frame
     setOverlay({ rect: { top: rect.top, left: rect.left, width: rect.width }, phase: 'start' })
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setOverlay(prev => prev ? { ...prev, phase: 'center' } : prev)
-      })
-    })
   }, [gameOver])
+
+  // Step 2: after 'start' is painted, advance to 'center' so the CSS transition fires
+  useEffect(() => {
+    if (overlay?.phase !== 'start') return
+    const id = requestAnimationFrame(() => {
+      setOverlay(prev => prev ? { ...prev, phase: 'center' } : prev)
+    })
+    return () => cancelAnimationFrame(id)
+  }, [overlay?.phase])
 
   const overlayItems = gameStatus === 'won'
     ? rightItems
@@ -320,13 +323,17 @@ export default function GameBoard({ game }) {
       </div>
 
       {/* Fixed-position clone that slides from the right column to center */}
-      {overlay && (
+      {overlay && (() => {
+        const targetX = window.innerWidth / 2 - overlay.rect.left - overlay.rect.width / 2
+        return (
         <div
-          className={`result-overlay ${overlay.phase === 'center' ? 'result-overlay--center' : ''}`}
+          className="result-overlay"
           style={{
             top: overlay.rect.top,
-            left: overlay.phase === 'center' ? undefined : overlay.rect.left,
+            left: overlay.rect.left,
             width: overlay.rect.width,
+            transform: overlay.phase === 'center' ? `translateX(${targetX}px)` : 'translateX(0)',
+            transition: overlay.phase === 'center' ? 'transform 1.8s ease-in-out' : 'none',
           }}
         >
           <div className="column-header">
@@ -348,7 +355,8 @@ export default function GameBoard({ game }) {
             ))}
           </div>
         </div>
-      )}
+        )
+      })()}
     </>
   )
 }
