@@ -338,8 +338,8 @@ export default function GameBoard({ game }) {
                 key={index}
                 className="slot slot-filled feedback-correct"
                 style={{
-                  animation: 'resultSettle 0.45s ease-out both',
-                  animationDelay: `${0.5 + index * 0.08}s`,
+                  animation: 'resultSettle 0.5s ease-out both',
+                  animationDelay: `${1.9 + index * 0.1}s`,
                 }}
               >
                 <span className="slot-number">{index + 1}</span>

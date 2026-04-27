@@ -271,7 +271,7 @@ body {
   flex-direction: column;
   gap: 0.5rem;
   z-index: 50;
-  transition: left 0.55s ease-out, transform 0.55s ease-out;
+  transition: left 1.8s ease-in-out, transform 1.8s ease-in-out;
 }
 
 .result-overlay--center {
