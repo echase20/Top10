@@ -23,7 +23,7 @@ export default function App() {
   useEffect(() => {
     if ((gameStatus === 'won' || gameStatus === 'lost') && !statsAutoShownRef.current) {
       statsAutoShownRef.current = true
-      const t = setTimeout(() => setShowStats(true), 4200)
+      const t = setTimeout(() => setShowStats(true), 2400)
       return () => clearTimeout(t)
     }
   }, [gameStatus])

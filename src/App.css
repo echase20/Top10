@@ -252,10 +252,17 @@ body {
   flex: 0 0 50%;
   min-width: 0;
   overflow: hidden;
+  transition: flex-basis 1.6s ease-in-out;
 }
 
 .source-column.column-gone {
+  flex-basis: 0%;
   visibility: hidden;
+}
+
+.columns-wrapper.left-gone {
+  gap: 0;
+  transition: gap 1.6s ease-in-out;
 }
 
 .target-column {

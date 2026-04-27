@@ -179,7 +179,7 @@ export default function GameBoard({ game }) {
     <div className="game-board-container" ref={boardRef}>
       <div ref={ghostRef} className="drag-ghost" />
 
-      <div className="columns-wrapper">
+      <div className={`columns-wrapper ${gameOver ? 'left-gone' : ''}`}>
         {/* Left column — hidden when game ends */}
         <div
           className={`column source-column ${inFeedbackMode ? 'column-locked' : ''} ${gameOver ? 'column-gone' : ''}`}
