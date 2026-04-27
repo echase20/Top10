@@ -250,14 +250,13 @@ body {
 
 /* Source column collapses when game ends, right column expands naturally via flex */
 .source-column {
-  flex: 1;
+  flex: 0 0 50%;
   min-width: 0;
   overflow: hidden;
-  transition: max-width 0.55s ease-out, opacity 0.45s ease-out, padding 0.5s ease-out;
-  max-width: 600px;
+  transition: flex-basis 0.55s ease-out, opacity 0.45s ease-out, padding 0.5s ease-out;
 }
 .source-column.column-collapsing {
-  max-width: 0;
+  flex-basis: 0%;
   opacity: 0;
   padding: 0;
 }
