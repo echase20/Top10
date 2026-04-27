@@ -20,7 +20,6 @@ export default function GameBoard({ game }) {
     inFeedbackMode,
     lockedSlots,
     attempts,
-    attemptsRemaining,
     correctAnswer,
   } = game
 
@@ -28,17 +27,35 @@ export default function GameBoard({ game }) {
   const canInteract = isPlaying && !inFeedbackMode
   const gameOver = gameStatus === 'won' || gameStatus === 'lost'
 
-  // Show result view after a short delay so the player sees the final feedback colors first
-  const [showResult, setShowResult] = useState(() => gameOver)
+  // Animation phases:
+  //   'board'   → normal two-column layout
+  //   'sliding' → result items slide in below, columns still visible
+  //   'done'    → columns fade out, result centered
+  const [phase, setPhase] = useState(() => gameOver ? 'done' : 'board')
+  const phaseRef = useRef(phase)
+
   useEffect(() => {
-    if (gameOver) {
-      const t = setTimeout(() => setShowResult(true), 1000)
+    if (!gameOver) {
+      setPhase('board')
+      phaseRef.current = 'board'
+      return
+    }
+    if (phaseRef.current === 'board') {
+      phaseRef.current = 'sliding'
+      setPhase('sliding')
+      // 10 items × 150ms stagger + 600ms animation ≈ 2100ms; add buffer
+      const t = setTimeout(() => {
+        setPhase('done')
+        phaseRef.current = 'done'
+      }, 2400)
       return () => clearTimeout(t)
     }
-    if (gameStatus === 'playing') setShowResult(false)
-  }, [gameStatus, gameOver])
+  }, [gameOver])
 
-  // ── Touch drag tracking (for haptic + ghost + hints) ─────────────────────
+  // ── Desktop drag tracking (for placement hints) ───────────────────────────
+  const [desktopDragItem, setDesktopDragItem] = useState(null)
+
+  // ── Touch drag with ghost and haptic feedback ─────────────────────────────
   const boardRef = useRef(null)
   const ghostRef = useRef(null)
   const touchDragRef = useRef(null)
@@ -135,9 +152,8 @@ export default function GameBoard({ game }) {
   }
   // ─────────────────────────────────────────────────────────────────────────
 
-  // Show placement hints for the active item (selected OR being touch-dragged),
-  // regardless of whether it's coming from the left or right column
-  const activeItem = selectedItem?.item ?? touchActiveItem
+  // Placement hints for any active item: selected, touch-dragged, or mouse-dragged
+  const activeItem = selectedItem?.item ?? touchActiveItem ?? desktopDragItem
   const placementHints = (() => {
     if (!activeItem || attempts.length === 0) return {}
     const hints = {}
@@ -157,7 +173,10 @@ export default function GameBoard({ game }) {
   const handleDragStart = (e, item, source, index) => {
     e.dataTransfer.setData('application/json', buildDragData(item, source, index))
     e.dataTransfer.effectAllowed = 'move'
+    setDesktopDragItem(item)
   }
+
+  const handleDragEnd = () => setDesktopDragItem(null)
 
   const handleDragOver = e => {
     if (!canInteract) return
@@ -183,7 +202,6 @@ export default function GameBoard({ game }) {
     if (data && data.source === 'right') handleDrop('left', null, data)
   }
 
-  // Items to display in the result view
   const resultItems = gameStatus === 'won'
     ? rightItems.filter(Boolean)
     : correctAnswer ?? []
@@ -192,8 +210,8 @@ export default function GameBoard({ game }) {
     <div className="game-board-container" ref={boardRef}>
       <div ref={ghostRef} className="drag-ghost" />
 
-      {/* Two-column board — hidden once result slides in */}
-      <div className={`columns-wrapper${showResult ? ' result-hidden' : ''}`}>
+      {/* Two-column board — fades out after result slides in */}
+      <div className={`columns-wrapper${phase === 'done' ? ' columns-fading' : ''}`}>
         {/* Left column */}
         <div
           className={`column source-column ${inFeedbackMode ? 'column-locked' : ''}`}
@@ -213,6 +231,7 @@ export default function GameBoard({ game }) {
                 isDraggable={canInteract}
                 onClick={() => canInteract && handleSelectItem(item, 'left', leftItems.indexOf(item))}
                 onDragStart={e => handleDragStart(e, item, 'left', leftItems.indexOf(item))}
+                onDragEnd={handleDragEnd}
                 onTouchStart={startTouchDrag(item, 'left', leftItems.indexOf(item))}
               />
             ))}
@@ -265,6 +284,7 @@ export default function GameBoard({ game }) {
                       className={`slot-item-content ${isSlotSelected ? 'selected' : ''}`}
                       draggable={canInteract && !isLocked}
                       onDragStart={e => !isLocked && handleDragStart(e, item, 'right', index)}
+                      onDragEnd={handleDragEnd}
                       onTouchStart={!isLocked ? startTouchDrag(item, 'right', index) : undefined}
                     >
                       {item.name}
@@ -296,8 +316,8 @@ export default function GameBoard({ game }) {
         </div>
       </div>
 
-      {/* Result view — slides in after game ends */}
-      {showResult && (
+      {/* Result view — items slide in one by one while board is still visible */}
+      {(phase === 'sliding' || phase === 'done') && (
         <div className="result-view">
           <p className="result-label">
             {gameStatus === 'won' ? '🎉 You got it!' : 'Correct Ranking'}
@@ -306,7 +326,7 @@ export default function GameBoard({ game }) {
             <div
               key={item.id}
               className={`result-item ${gameStatus === 'won' ? 'result-correct' : 'result-answer'}`}
-              style={{ animationDelay: `${i * 0.07}s` }}
+              style={{ animationDelay: `${i * 0.15}s` }}
             >
               <span className="result-rank">{i + 1}</span>
               <span className="result-name">{item.name}</span>

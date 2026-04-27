@@ -424,12 +424,17 @@ body {
 
 /* ===== Result view (post-game slide-in) ===== */
 @keyframes slideFromRight {
-  from { transform: translateX(70px); opacity: 0; }
+  from { transform: translateX(80px); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
 }
 
-.columns-wrapper.result-hidden {
-  display: none;
+/* Columns fade out after all result items have slid in */
+.columns-wrapper {
+  transition: opacity 0.6s ease-out;
+}
+.columns-wrapper.columns-fading {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .result-view {
@@ -437,7 +442,7 @@ body {
   flex-direction: column;
   gap: 0.35rem;
   max-width: 360px;
-  margin: 0.5rem auto 0;
+  margin: 1rem auto 0;
   padding: 0 0.5rem;
 }
 
@@ -457,7 +462,8 @@ body {
   gap: 0.75rem;
   padding: 0.5rem 0.9rem;
   border-radius: var(--radius);
-  animation: slideFromRight 0.35s ease-out both;
+  /* Slower, more methodical: 0.6s animation, 0.15s stagger set inline */
+  animation: slideFromRight 0.6s ease-out both;
 }
 
 .result-rank {

@@ -18,12 +18,13 @@ export default function App() {
 
   const { puzzle, rankingLoaded, hasData, gameStatus, attemptsRemaining, stats } = game
 
-  // Auto-show stats when the ranking game finishes (once per session)
+  // Auto-show stats after the slide animation finishes (once per session)
   const statsAutoShownRef = useRef(false)
   useEffect(() => {
     if ((gameStatus === 'won' || gameStatus === 'lost') && !statsAutoShownRef.current) {
       statsAutoShownRef.current = true
-      setShowStats(true)
+      const t = setTimeout(() => setShowStats(true), 2800)
+      return () => clearTimeout(t)
     }
   }, [gameStatus])
 

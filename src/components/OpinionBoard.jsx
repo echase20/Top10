@@ -54,7 +54,7 @@ export default function OpinionBoard({ game }) {
             <div
               key={item.id}
               className="result-item result-opinion"
-              style={{ animationDelay: `${i * 0.07}s` }}
+              style={{ animationDelay: `${i * 0.15}s` }}
             >
               <span className="result-rank">{i + 1}</span>
               <span className="result-name">{item.name}</span>

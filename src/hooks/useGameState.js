@@ -94,6 +94,14 @@ export function useGameState() {
     if (yesterdayPuzzle.rankingPuzzle) {
       return { id: yesterdayPuzzle.id, ...yesterdayPuzzle.rankingPuzzle }
     }
+    // Dev fallback: assign sequential correctRanks so the game is always playable locally
+    if (import.meta.env.DEV) {
+      return {
+        id: yesterdayPuzzle.id,
+        ...basePuzzle,
+        items: basePuzzle.items.map((item, i) => ({ ...item, correctRank: i + 1 })),
+      }
+    }
     return { id: yesterdayPuzzle.id, ...basePuzzle }
   }, [yesterdayPuzzle, basePuzzle, communityRanking])
 
@@ -245,7 +253,7 @@ export function useGameState() {
   const handleSubmit = useCallback(() => {
     if (!isSubmittable || gameStatus !== 'playing' || inFeedbackMode) return
     if (!communityRanking.loaded) return
-    if (!communityRanking.hasData && !yesterdayPuzzle.rankingPuzzle) return
+    if (!communityRanking.hasData && !yesterdayPuzzle.rankingPuzzle && !import.meta.env.DEV) return
 
     const feedback = evaluateAttempt(rightItems, puzzle)
     const won = isWin(feedback)
@@ -330,7 +338,7 @@ export function useGameState() {
   return {
     puzzle,
     rankingLoaded: communityRanking.loaded,
-    hasData: communityRanking.hasData || !!yesterdayPuzzle.rankingPuzzle,
+    hasData: communityRanking.hasData || !!yesterdayPuzzle.rankingPuzzle || import.meta.env.DEV,
     leftItems,
     rightItems,
     selectedItem,
