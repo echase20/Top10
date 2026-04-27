@@ -27,31 +27,36 @@ export default function GameBoard({ game }) {
   const canInteract = isPlaying && !inFeedbackMode
   const gameOver = gameStatus === 'won' || gameStatus === 'lost'
 
-  // Animation phases:
-  //   'board'   → normal two-column layout
-  //   'sliding' → left column collapses, slot items animate (settle or slide-out)
-  //   'done'    → for loss: correct items slide into slots; for win: static
-  const [phase, setPhase] = useState(() => gameOver ? 'done' : 'board')
-  const phaseRef = useRef(phase)
+  // ── Overlay: fixed-position clone of right column that slides to center ───
+  const targetColRef = useRef(null)
+  const overlayTriggeredRef = useRef(false)
+  const [overlay, setOverlay] = useState(null) // null | { rect, phase: 'start'|'center' }
 
   useEffect(() => {
     if (!gameOver) {
-      setPhase('board')
-      phaseRef.current = 'board'
+      overlayTriggeredRef.current = false
+      setOverlay(null)
       return
     }
-    if (phaseRef.current === 'board') {
-      phaseRef.current = 'sliding'
-      setPhase('sliding')
-      // Loss: items slide out over ~1.2s; win: items settle over ~1.7s
-      const delay = gameStatus === 'lost' ? 1300 : 1900
-      const t = setTimeout(() => {
-        setPhase('done')
-        phaseRef.current = 'done'
-      }, delay)
-      return () => clearTimeout(t)
-    }
-  }, [gameOver, gameStatus])
+    if (overlayTriggeredRef.current) return
+    overlayTriggeredRef.current = true
+
+    const rect = targetColRef.current?.getBoundingClientRect()
+    if (!rect) return
+
+    // Place clone exactly over the right column, then slide to center next frame
+    setOverlay({ rect: { top: rect.top, left: rect.left, width: rect.width }, phase: 'start' })
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setOverlay(prev => prev ? { ...prev, phase: 'center' } : prev)
+      })
+    })
+  }, [gameOver])
+
+  const overlayItems = gameStatus === 'won'
+    ? rightItems
+    : (correctAnswer ?? rightItems)
+  const overlayHeader = gameStatus === 'won' ? 'You got it! ✓' : 'Correct Ranking'
 
   // ── Desktop drag tracking (for placement hints) ───────────────────────────
   const [desktopDragItem, setDesktopDragItem] = useState(null)
@@ -203,136 +208,147 @@ export default function GameBoard({ game }) {
   }
 
   return (
-    <div className="game-board-container" ref={boardRef}>
-      <div ref={ghostRef} className="drag-ghost" />
+    <>
+      <div className={`game-board-container ${overlay ? 'board-hidden' : ''}`} ref={boardRef}>
+        <div ref={ghostRef} className="drag-ghost" />
 
-      <div className="columns-wrapper">
-        {/* Left column — collapses when game ends */}
-        <div
-          className={`column source-column ${inFeedbackMode ? 'column-locked' : ''} ${phase !== 'board' ? 'column-collapsing' : ''}`}
-          onDragOver={handleDragOver}
-          onDrop={handleDropOnLeft}
-        >
-          <div className="column-header">
-            <span>Items</span>
-            <span className="column-count">{leftItems.length} left</span>
+        <div className="columns-wrapper">
+          {/* Left column */}
+          <div
+            className={`column source-column ${inFeedbackMode ? 'column-locked' : ''}`}
+            onDragOver={handleDragOver}
+            onDrop={handleDropOnLeft}
+          >
+            <div className="column-header">
+              <span>Items</span>
+              <span className="column-count">{leftItems.length} left</span>
+            </div>
+            <div className="source-items">
+              {leftItems.map(item => (
+                <ItemTile
+                  key={item.id}
+                  item={item}
+                  isSelected={selectedItem?.source === 'left' && selectedItem?.item.id === item.id}
+                  isDraggable={canInteract}
+                  onClick={() => canInteract && handleSelectItem(item, 'left', leftItems.indexOf(item))}
+                  onDragStart={e => handleDragStart(e, item, 'left', leftItems.indexOf(item))}
+                  onDragEnd={handleDragEnd}
+                  onTouchStart={startTouchDrag(item, 'left', leftItems.indexOf(item))}
+                />
+              ))}
+              {leftItems.length === 0 && (
+                <div className="empty-source">All items placed →</div>
+              )}
+            </div>
           </div>
-          <div className="source-items">
-            {leftItems.map(item => (
-              <ItemTile
-                key={item.id}
-                item={item}
-                isSelected={selectedItem?.source === 'left' && selectedItem?.item.id === item.id}
-                isDraggable={canInteract}
-                onClick={() => canInteract && handleSelectItem(item, 'left', leftItems.indexOf(item))}
-                onDragStart={e => handleDragStart(e, item, 'left', leftItems.indexOf(item))}
-                onDragEnd={handleDragEnd}
-                onTouchStart={startTouchDrag(item, 'left', leftItems.indexOf(item))}
-              />
-            ))}
-            {leftItems.length === 0 && (
-              <div className="empty-source">All items placed →</div>
+
+          {/* Right column */}
+          <div className="column target-column" ref={targetColRef}>
+            <div className="column-header">
+              <span>Your Ranking</span>
+              <span className="attempt-dots">
+                {Array.from({ length: MAX_ATTEMPTS }, (_, i) => (
+                  <span key={i} className={`attempt-dot ${i < attempts.length ? 'used' : ''}`} />
+                ))}
+              </span>
+            </div>
+            <div className="target-slots">
+              {Array.from({ length: 10 }, (_, index) => {
+                const displayItem = rightItems[index]
+                const fb = lastFeedback ? lastFeedback[index] : null
+                const isLocked = lockedSlots[index]
+                const isSlotSelected =
+                  !inFeedbackMode && !isLocked &&
+                  selectedItem?.source === 'right' && selectedItem?.index === index
+                const hasSelection = canInteract && !!selectedItem
+                const isHintSlot = canInteract && placementHints[index] !== undefined
+
+                return (
+                  <div
+                    key={index}
+                    data-slot-index={index}
+                    className={[
+                      'slot',
+                      displayItem ? 'slot-filled' : 'slot-empty',
+                      isLocked && 'slot-locked',
+                      isSlotSelected && 'slot-selected',
+                      !isLocked && hasSelection && !displayItem && 'slot-droppable',
+                      fb && `feedback-${fb}`,
+                      isHintSlot && `slot-hint-${placementHints[index]}`,
+                    ].filter(Boolean).join(' ')}
+                    onDragOver={handleDragOver}
+                    onDrop={e => !isLocked && handleDropOnRight(e, index)}
+                    onClick={() => !isLocked && canInteract && handleSlotClick(index)}
+                  >
+                    <span className="slot-number">{index + 1}</span>
+                    {displayItem ? (
+                      <div
+                        className={`slot-item-content ${isSlotSelected ? 'selected' : ''}`}
+                        draggable={canInteract && !isLocked}
+                        onDragStart={e => !isLocked && handleDragStart(e, displayItem, 'right', index)}
+                        onDragEnd={handleDragEnd}
+                        onTouchStart={!isLocked ? startTouchDrag(displayItem, 'right', index) : undefined}
+                      >
+                        {displayItem.name}
+                      </div>
+                    ) : (
+                      <span className="slot-placeholder">
+                        {hasSelection ? 'Click to place' : 'Empty'}
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {isPlaying && !inFeedbackMode && (
+              <button
+                className={`submit-btn ${isSubmittable ? 'ready' : 'disabled'}`}
+                onClick={handleSubmit}
+                disabled={!isSubmittable}
+              >
+                Submit Ranking
+              </button>
+            )}
+            {isPlaying && inFeedbackMode && (
+              <button className="reset-btn" onClick={handleReset}>
+                ↩ Reset & Try Again
+              </button>
             )}
           </div>
         </div>
+      </div>
 
-        {/* Right column — expands to center as left collapses */}
-        <div className="column target-column">
+      {/* Fixed-position clone that slides from the right column to center */}
+      {overlay && (
+        <div
+          className={`result-overlay ${overlay.phase === 'center' ? 'result-overlay--center' : ''}`}
+          style={{
+            top: overlay.rect.top,
+            left: overlay.phase === 'center' ? undefined : overlay.rect.left,
+            width: overlay.rect.width,
+          }}
+        >
           <div className="column-header">
-            <span>
-              {phase !== 'board' && gameStatus === 'lost' ? 'Correct Ranking' : 'Your Ranking'}
-            </span>
-            <span className="attempt-dots">
-              {Array.from({ length: MAX_ATTEMPTS }, (_, i) => (
-                <span key={i} className={`attempt-dot ${i < attempts.length ? 'used' : ''}`} />
-              ))}
-            </span>
+            <span>{overlayHeader}</span>
           </div>
           <div className="target-slots">
-            {Array.from({ length: 10 }, (_, index) => {
-              // In 'done' phase for a loss, show the correct answer in each slot
-              const showingCorrect = phase === 'done' && gameStatus === 'lost' && correctAnswer
-              const displayItem = showingCorrect ? correctAnswer[index] : rightItems[index]
-              const fb = showingCorrect ? 'correct' : (lastFeedback ? lastFeedback[index] : null)
-
-              const isLocked = lockedSlots[index]
-              const isSlotSelected =
-                !inFeedbackMode && !isLocked &&
-                selectedItem?.source === 'right' && selectedItem?.index === index
-              const hasSelection = canInteract && !!selectedItem
-              const isHintSlot = canInteract && placementHints[index] !== undefined
-
-              // Per-slot animation during result phases
-              const slotStyle = (() => {
-                if (phase === 'sliding') {
-                  if (gameStatus === 'won') {
-                    return { animation: 'resultSettle 0.5s ease-out both', animationDelay: `${index * 0.12}s` }
-                  }
-                  if (gameStatus === 'lost') {
-                    return { animation: 'resultSlideOut 0.35s ease-in both', animationDelay: `${index * 0.09}s` }
-                  }
-                }
-                if (phase === 'done' && gameStatus === 'lost') {
-                  return { animation: 'resultSlideIn 0.5s ease-out both', animationDelay: `${index * 0.12}s` }
-                }
-                return {}
-              })()
-
-              return (
-                <div
-                  key={index}
-                  data-slot-index={index}
-                  style={slotStyle}
-                  className={[
-                    'slot',
-                    displayItem ? 'slot-filled' : 'slot-empty',
-                    isLocked && phase === 'board' ? 'slot-locked' : '',
-                    isSlotSelected ? 'slot-selected' : '',
-                    !isLocked && hasSelection && !displayItem ? 'slot-droppable' : '',
-                    fb ? `feedback-${fb}` : '',
-                    isHintSlot ? `slot-hint-${placementHints[index]}` : '',
-                  ].filter(Boolean).join(' ')}
-                  onDragOver={handleDragOver}
-                  onDrop={e => !isLocked && handleDropOnRight(e, index)}
-                  onClick={() => !isLocked && canInteract && handleSlotClick(index)}
-                >
-                  <span className="slot-number">{index + 1}</span>
-                  {displayItem ? (
-                    <div
-                      className={`slot-item-content ${isSlotSelected ? 'selected' : ''}`}
-                      draggable={canInteract && !isLocked}
-                      onDragStart={e => !isLocked && handleDragStart(e, displayItem, 'right', index)}
-                      onDragEnd={handleDragEnd}
-                      onTouchStart={!isLocked ? startTouchDrag(displayItem, 'right', index) : undefined}
-                    >
-                      {displayItem.name}
-                    </div>
-                  ) : (
-                    <span className="slot-placeholder">
-                      {hasSelection ? 'Click to place' : 'Empty'}
-                    </span>
-                  )}
-                </div>
-              )
-            })}
+            {overlayItems.map((item, index) => (
+              <div
+                key={index}
+                className="slot slot-filled feedback-correct"
+                style={{
+                  animation: 'resultSettle 0.45s ease-out both',
+                  animationDelay: `${0.5 + index * 0.08}s`,
+                }}
+              >
+                <span className="slot-number">{index + 1}</span>
+                <div className="slot-item-content">{item?.name}</div>
+              </div>
+            ))}
           </div>
-
-          {isPlaying && !inFeedbackMode && (
-            <button
-              className={`submit-btn ${isSubmittable ? 'ready' : 'disabled'}`}
-              onClick={handleSubmit}
-              disabled={!isSubmittable}
-            >
-              Submit Ranking
-            </button>
-          )}
-          {isPlaying && inFeedbackMode && (
-            <button className="reset-btn" onClick={handleReset}>
-              ↩ Reset & Try Again
-            </button>
-          )}
         </div>
-      </div>
-    </div>
+      )}
+    </>
   )
 }
