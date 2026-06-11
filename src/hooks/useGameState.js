@@ -312,8 +312,9 @@ export function useGameState() {
     setSelectedItem(null)
   }, [])
 
+  const canComputeAnswer = communityRanking.hasData || !!yesterdayPuzzle.rankingPuzzle || import.meta.env.DEV
   const correctAnswer =
-    gameStatus === 'lost' && communityRanking.hasData
+    (gameStatus === 'lost' || gameStatus === 'won') && canComputeAnswer
       ? [...puzzle.items].sort((a, b) => a.correctRank - b.correctRank)
       : null
 

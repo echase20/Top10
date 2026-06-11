@@ -30,6 +30,87 @@ export default function GameBoard({ game }) {
   const displayItems = gameStatus === 'lost' && correctAnswer ? correctAnswer : rightItems
   const rightHeader = gameStatus === 'won' ? 'You got it! ✓' : gameStatus === 'lost' ? 'Correct Ranking' : 'Your Ranking'
 
+  // ── Post-game fly animation ───────────────────────────────────────────────
+  // Initialize as 'done' if game was already over on mount (loaded from localStorage)
+  const [animPhase, setAnimPhase] = useState(() =>
+    gameStatus === 'won' || gameStatus === 'lost' ? 'done' : 'idle'
+  )
+  const [flyItems, setFlyItems] = useState([])
+  const slotRefs = useRef(Array(10).fill(null))
+  const flyEls = useRef([])
+
+  useEffect(() => {
+    if (gameStatus === 'playing') {
+      setAnimPhase('idle')
+      setFlyItems([])
+    }
+  }, [gameStatus])
+
+  useEffect(() => {
+    // Only trigger when game just ended (idle → animating transition)
+    if (!gameOver || animPhase !== 'idle') return
+
+    // Snapshot slot positions BEFORE left column hides
+    const beforeRects = slotRefs.current.map(el => el?.getBoundingClientRect())
+
+    // Hiding left column happens on next render (animPhase change drives the class)
+    setAnimPhase('animating')
+
+    // Two rAFs to let layout settle after left column disappears
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const afterRects = slotRefs.current.map(el => el?.getBoundingClientRect())
+      const vpCenter = window.innerWidth / 2
+      const itemsToAnimate = correctAnswer || rightItems
+
+      const items = itemsToAnimate.map((item, ci) => {
+        // Find where the user placed this item
+        const si = rightItems.findIndex(r => r?.id === item.id)
+        const start = beforeRects[si >= 0 ? si : ci]
+        const target = afterRects[ci]
+        if (!start || !target) return null
+
+        const tx = vpCenter - start.width / 2
+        const ty = target.top
+
+        return {
+          item,
+          tx,
+          ty,
+          width: start.width,
+          height: start.height,
+          // Offset from target to start — animation goes from this offset to 0
+          dx: start.left - tx,
+          dy: start.top - ty,
+          idx: ci,
+          // Use the actual feedback color from the user's last attempt for this slot
+          feedback: (lastFeedback && si >= 0 ? lastFeedback[si] : null) || 'correct',
+        }
+      }).filter(Boolean)
+
+      setFlyItems(items)
+
+      // One more rAF to let React render the flying elements before animating
+      requestAnimationFrame(() => {
+        items.forEach((data, i) => {
+          const el = flyEls.current[i]
+          if (!el) return
+          // fill: 'both' means the first keyframe is applied immediately (during delay),
+          // so all clones appear at their start positions before their turn to fly
+          el.animate(
+            [
+              { transform: `translate(${data.dx}px, ${data.dy}px)`, opacity: 1 },
+              { transform: 'translate(0, 0)', opacity: 1 },
+            ],
+            { duration: 500, delay: i * 500, easing: 'ease-out', fill: 'both' }
+          )
+        })
+
+        // Switch to done — keep flyItems alive so clones remain as the final display
+        setTimeout(() => setAnimPhase('done'), items.length * 500 + 200)
+      })
+    }))
+  }, [gameOver, animPhase])
+
   // ── Desktop drag tracking (for placement hints) ───────────────────────────
   const [desktopDragItem, setDesktopDragItem] = useState(null)
 
@@ -175,14 +256,36 @@ export default function GameBoard({ game }) {
     if (data && data.source === 'right') handleDrop('left', null, data)
   }
 
+  const leftGone = animPhase !== 'idle'
+
   return (
     <div className="game-board-container" ref={boardRef}>
       <div ref={ghostRef} className="drag-ghost" />
 
-      <div className={`columns-wrapper ${gameOver ? 'left-gone' : ''}`}>
-        {/* Left column — hidden when game ends */}
+      {/* Fixed-position flying clones — rendered during animation */}
+      {flyItems.map((data, i) => (
         <div
-          className={`column source-column ${inFeedbackMode ? 'column-locked' : ''} ${gameOver ? 'column-gone' : ''}`}
+          key={data.item.id}
+          ref={el => { flyEls.current[i] = el }}
+          className={`slot slot-filled feedback-${data.feedback} fly-clone`}
+          style={{
+            position: 'fixed',
+            left: data.tx,
+            top: data.ty,
+            width: data.width,
+            height: data.height,
+            transform: `translate(${data.dx}px, ${data.dy}px)`,
+          }}
+        >
+          <span className="slot-number">{data.idx + 1}</span>
+          <div className="slot-item-content">{data.item.name}</div>
+        </div>
+      ))}
+
+      <div className={`columns-wrapper${leftGone ? ' left-gone' : ''}`}>
+        {/* Left column — hidden instantly when animation starts */}
+        <div
+          className={`column source-column${inFeedbackMode ? ' column-locked' : ''}${leftGone ? ' column-gone' : ''}`}
           onDragOver={handleDragOver}
           onDrop={handleDropOnLeft}
         >
@@ -210,7 +313,7 @@ export default function GameBoard({ game }) {
         </div>
 
         {/* Right column */}
-        <div className={`column target-column ${gameOver ? 'column-result' : ''}`}>
+        <div className={`column target-column${gameOver ? ' column-result' : ''}`}>
           <div className="column-header">
             <span>{rightHeader}</span>
             <span className="attempt-dots">
@@ -233,6 +336,7 @@ export default function GameBoard({ game }) {
               return (
                 <div
                   key={index}
+                  ref={el => { slotRefs.current[index] = el }}
                   data-slot-index={index}
                   className={[
                     'slot',
@@ -243,6 +347,7 @@ export default function GameBoard({ game }) {
                     fb && `feedback-${fb}`,
                     isHintSlot && `slot-hint-${placementHints[index]}`,
                   ].filter(Boolean).join(' ')}
+                  style={animPhase === 'animating' || flyItems.length > 0 ? { opacity: 0 } : undefined}
                   onDragOver={handleDragOver}
                   onDrop={e => !isLocked && handleDropOnRight(e, index)}
                   onClick={() => !isLocked && canInteract && handleSlotClick(index)}

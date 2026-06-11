@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import logo from './assets/logo.png'
 import Header from './components/Header'
 import GameBoard from './components/GameBoard'
 import OpinionBoard from './components/OpinionBoard'
@@ -12,6 +13,12 @@ import './App.css'
 export default function App() {
   const [view, setView] = useState('ranking')
   const [showStats, setShowStats] = useState(false)
+
+  // Sync theme to <html> so gradient pseudo-elements can live there
+  // (avoids isolation: isolate on .app which breaks position:fixed fly clones)
+  useEffect(() => {
+    document.documentElement.dataset.theme = view
+  }, [view])
   const [showWelcome, setShowWelcome] = useState(true)
   const game = useGameState()
   const opinion = useOpinionState()
@@ -23,8 +30,11 @@ export default function App() {
   useEffect(() => {
     if ((gameStatus === 'won' || gameStatus === 'lost') && !statsAutoShownRef.current) {
       statsAutoShownRef.current = true
-      const t = setTimeout(() => setShowStats(true), 2400)
-      return () => clearTimeout(t)
+      const t = setTimeout(() => setShowStats(true), 5500)
+      return () => {
+        clearTimeout(t)
+        statsAutoShownRef.current = false // reset so StrictMode re-invoke re-arms the timeout
+      }
     }
   }, [gameStatus])
 
@@ -47,7 +57,8 @@ export default function App() {
   const rankingDone = gameStatus === 'won' || gameStatus === 'lost'
 
   return (
-    <div className="app">
+    <div className={`app theme-${view}`}>
+      <img src={logo} alt="" className="app-watermark" aria-hidden="true" />
       <Header onShowStats={() => setShowStats(true)} streak={stats.currentStreak} />
 
       <main className="main">

@@ -7,7 +7,7 @@
 
 body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: #121213;
+  background: #0d0618;
   color: #ffffff;
   min-height: 100vh;
 }
@@ -15,9 +15,9 @@ body {
 /* ===== CSS Variables ===== */
 :root {
   --bg: #121213;
-  --bg-surface: #1a1a1b;
-  --bg-tile: #2c2c2e;
-  --bg-tile-hover: #3a3a3c;
+  --bg-surface: rgba(26, 26, 27, 0.45);
+  --bg-tile: rgba(44, 44, 46, 0.45);
+  --bg-tile-hover: rgba(58, 58, 60, 0.55);
   --border: #3a3a3c;
   --border-light: #4a4a4c;
   --text: #ffffff;
@@ -30,6 +30,35 @@ body {
   --radius: 6px;
   --radius-lg: 10px;
 }
+
+/* ===== Theme gradient backgrounds ===== */
+/* Live on <html> pseudo-elements so they never interfere with .app's
+   stacking context — position:fixed fly clones in GameBoard depend on
+   .app NOT being a containing block for fixed children. */
+html::before,
+html::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+
+/* Purple gradient — ranking game (default) */
+html::before {
+  background: linear-gradient(160deg, #6b1fa8 0%, #110820 100%);
+  opacity: 1;
+}
+
+/* Blue gradient — opinion game */
+html::after {
+  background: linear-gradient(160deg, #1040b8 0%, #060d1a 100%);
+  opacity: 0;
+}
+
+html[data-theme="opinion"]::before { opacity: 0; }
+html[data-theme="opinion"]::after  { opacity: 1; }
 
 /* ===== App Layout ===== */
 .app {
@@ -44,6 +73,8 @@ body {
   margin: 0 auto;
   padding: 1rem 1rem 2rem;
   width: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 /* ===== Header ===== */
@@ -52,8 +83,13 @@ body {
   padding: 0.75rem 1.25rem;
   position: sticky;
   top: 0;
-  background: var(--bg);
+  background: #0d0618;
   z-index: 10;
+  transition: background 0.6s ease;
+}
+
+.app.theme-opinion .header {
+  background: #060d1a;
 }
 
 .header-content {
@@ -68,6 +104,19 @@ body {
   font-size: 1.6rem;
   font-weight: 900;
   letter-spacing: 0.2em;
+}
+
+/* ===== Background watermark logo ===== */
+.app-watermark {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(100vw, 100vh);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+  user-select: none;
 }
 
 .header-left,
@@ -252,17 +301,14 @@ body {
   flex: 0 0 50%;
   min-width: 0;
   overflow: hidden;
-  transition: flex-basis 1.6s ease-in-out;
 }
 
 .source-column.column-gone {
-  flex-basis: 0%;
-  visibility: hidden;
+  display: none;
 }
 
 .columns-wrapper.left-gone {
   gap: 0;
-  transition: gap 1.6s ease-in-out;
 }
 
 .target-column {
@@ -509,6 +555,13 @@ body {
 .result-opinion {
   background: rgba(139, 92, 246, 0.1);
   border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+/* ===== Post-game flying clones ===== */
+.fly-clone {
+  z-index: 20;
+  pointer-events: none;
+  cursor: default;
 }
 
 /* ===== Touch drag ghost ===== */
