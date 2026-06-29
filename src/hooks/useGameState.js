@@ -357,6 +357,7 @@ export function useGameState() {
     handleDrop,
     handleSubmit,
     handleReset,
+    returnToLeft,
     resetGame,
     resetStats,
   }

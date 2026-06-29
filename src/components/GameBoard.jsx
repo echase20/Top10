@@ -14,6 +14,7 @@ export default function GameBoard({ game }) {
     handleDrop,
     handleSubmit,
     handleReset,
+    returnToLeft,
     isSubmittable,
     gameStatus,
     lastFeedback,
@@ -123,10 +124,12 @@ export default function GameBoard({ game }) {
   const canInteractRef = useRef(canInteract)
   const lockedSlotsRef = useRef(lockedSlots)
   const handleDropRef = useRef(handleDrop)
+  const returnToLeftRef = useRef(returnToLeft)
   const setTouchActiveItemRef = useRef(setTouchActiveItem)
   canInteractRef.current = canInteract
   lockedSlotsRef.current = lockedSlots
   handleDropRef.current = handleDrop
+  returnToLeftRef.current = returnToLeft
   setTouchActiveItemRef.current = setTouchActiveItem
 
   useEffect(() => {
@@ -177,6 +180,8 @@ export default function GameBoard({ game }) {
           index: drag.fromIndex,
           itemId: drag.item.id,
         })
+      } else if (drag.source === 'right' && target?.closest?.('.source-column')) {
+        returnToLeftRef.current(drag.item, drag.fromIndex)
       }
     }
 
@@ -246,14 +251,14 @@ export default function GameBoard({ game }) {
     e.preventDefault()
     if (!canInteract) return
     const data = parseDrop(e)
-    if (data) handleDrop('right', targetIndex, data)
+    if (data) { handleDrop('right', targetIndex, data); setDesktopDragItem(null) }
   }
 
   const handleDropOnLeft = e => {
     e.preventDefault()
     if (!canInteract) return
     const data = parseDrop(e)
-    if (data && data.source === 'right') handleDrop('left', null, data)
+    if (data && data.source === 'right') { handleDrop('left', null, data); setDesktopDragItem(null) }
   }
 
   const leftGone = animPhase !== 'idle'
@@ -288,6 +293,10 @@ export default function GameBoard({ game }) {
           className={`column source-column${inFeedbackMode ? ' column-locked' : ''}${leftGone ? ' column-gone' : ''}`}
           onDragOver={handleDragOver}
           onDrop={handleDropOnLeft}
+          onClickCapture={selectedItem?.source === 'right' && canInteract ? e => {
+            e.stopPropagation()
+            returnToLeft(selectedItem.item, selectedItem.index)
+          } : undefined}
         >
           <div className="column-header">
             <span>Items</span>
@@ -325,12 +334,19 @@ export default function GameBoard({ game }) {
           <div className="target-slots">
             {Array.from({ length: 10 }, (_, index) => {
               const displayItem = gameOver ? displayItems[index] : rightItems[index]
-              const fb = gameOver ? 'correct' : (lastFeedback ? lastFeedback[index] : null)
+              const fb = gameOver
+                ? (() => {
+                    if (gameStatus === 'won') return 'correct'
+                    if (!lastFeedback || !displayItem) return 'correct'
+                    const si = rightItems.findIndex(r => r?.id === displayItem.id)
+                    return (si >= 0 ? lastFeedback[si] : null) || 'correct'
+                  })()
+                : (lastFeedback ? lastFeedback[index] : null)
               const isLocked = lockedSlots[index]
               const isSlotSelected =
                 !inFeedbackMode && !isLocked &&
                 selectedItem?.source === 'right' && selectedItem?.index === index
-              const hasSelection = canInteract && !!selectedItem
+              const hasSelection = canInteract && !!activeItem
               const isHintSlot = canInteract && placementHints[index] !== undefined
 
               return (

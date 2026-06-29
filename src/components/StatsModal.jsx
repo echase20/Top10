@@ -1,3 +1,5 @@
+import PuzzleRater from './PuzzleRater'
+
 export default function StatsModal({ stats, onClose, gameStatus, onContinue }) {
   const winPct =
     stats.gamesPlayed > 0 ? Math.round((stats.gamesWon / stats.gamesPlayed) * 100) : 0
@@ -49,6 +51,8 @@ export default function StatsModal({ stats, onClose, gameStatus, onContinue }) {
             <span className="stat-label">Max Streak</span>
           </div>
         </div>
+
+        {(gameStatus === 'won' || gameStatus === 'lost') && <PuzzleRater />}
 
         {onContinue && (
           <button className="continue-btn" onClick={onContinue}>

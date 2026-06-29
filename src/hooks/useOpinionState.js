@@ -204,6 +204,7 @@ export function useOpinionState() {
     handleSlotClick,
     handleDrop,
     handleSubmit,
+    returnToLeft,
     resetGame,
   }
 }
