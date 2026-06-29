@@ -1,14 +1,21 @@
 import { useState } from 'react'
 import { puzzles } from '../data/puzzles'
+import { getTodayStrET } from '../utils/gameLogic'
 
 export default function DevPanel({ game, opinion }) {
   const [open, setOpen] = useState(false)
   const { puzzle, attempts, gameStatus, lastFeedback, resetGame, resetStats } = game
 
+  const resetRating = () => {
+    localStorage.removeItem(`top10_rating_${getTodayStrET()}`)
+    window.location.reload()
+  }
+
   const resetAll = () => {
     resetGame()
     opinion.resetGame()
     resetStats()
+    localStorage.removeItem(`top10_rating_${getTodayStrET()}`)
   }
 
   // Jump to a specific puzzle by temporarily overriding today's date key
@@ -44,6 +51,9 @@ export default function DevPanel({ game, opinion }) {
             </button>
             <button className="dev-btn" onClick={resetStats}>
               ↺ Reset Stats
+            </button>
+            <button className="dev-btn" onClick={resetRating}>
+              ↺ Reset Rating
             </button>
             <button className="dev-btn dev-btn-danger" onClick={resetAll}>
               ✕ Reset Everything
