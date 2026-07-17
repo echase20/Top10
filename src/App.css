@@ -45,9 +45,9 @@ html::after {
   transition: opacity 0.6s ease;
 }
 
-/* Purple gradient — ranking game (default) */
+/* Purple-pink gradient — ranking game (default) */
 html::before {
-  background: linear-gradient(160deg, #6b1fa8 0%, #110820 100%);
+  background: linear-gradient(160deg, #c0267a 0%, #6b1fa8 45%, #0d0618 100%);
   opacity: 1;
 }
 
@@ -104,6 +104,11 @@ html[data-theme="opinion"]::after  { opacity: 1; }
   font-size: 1.6rem;
   font-weight: 900;
   letter-spacing: 0.2em;
+  background: linear-gradient(90deg, #c0267a 0%, #6b1fa8 45%, #1040b8 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 
 /* ===== Background watermark logo ===== */

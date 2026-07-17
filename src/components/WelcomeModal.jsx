@@ -7,40 +7,38 @@ const STORAGE_KEY = 'top10_welcome_seen'
 // { text: string, subpoints: string[] | { label, color, desc }[] }
 const PAGES = [
   {
-    title: 'Daily Top 10',
+    title: 'Welcome to Top10',
     points: [
-      'Every day, a new topic and 10 corresponding answer choices are presented to you.',
-      'Take these options and rank them however you see fit!',
+      'There are precisely 3,628,800 possible ways to orient a list of 10 items.',
+      'Whether you\'re a first-timer or a seasoned veteran of Top10, these tips will help you understand how to play Top10!',
     ],
   },
   {
-    title: 'Community Top 10',
+    title: 'Community Top10',
     points: [
-      'In addition to the new Daily Top 10, the topic and 10 items from the preceding day are presented to you again.',
-      'This time, place the 10 items in order based on how the overall community ranked them, using responses from the preceding day.',
-      'You have 3 attempts to match the community rankings.',
+      'The Community Top10 is simple: Guess the Community Top10 in 3 tries or fewer based on the Community Consensus rankings!',
+    ],
+  },
+  {
+    title: 'Reading Your Results',
+    points: [
       {
-        text: 'After each attempt, you will receive feedback on each item:',
+        text: 'The color of the boxes will change to indicate how close your guess was to the correct placement:',
         subpoints: [
-          { label: 'Green', color: 'correct', desc: 'Correct position' },
-          { label: 'Yellow', color: 'close', desc: 'One spot away' },
-          { label: 'Red', color: 'wrong', desc: 'Incorrect position' },
-        ],
-      },
-      'When the game ends — whether you matched the list or ran out of attempts — a screen will pop up congratulating you or encouraging you to try again.',
-      {
-        text: 'Basic Stats shown at the end:',
-        subpoints: [
-          '# of attempts used',
-          'Time taken to rank the Top 10',
-          'Total games played',
-          'Current streak',
-          'Max streak',
+          { label: 'Green', color: 'correct', desc: 'If your guess is correct, the box will light up Green' },
+          { label: 'Yellow', color: 'close', desc: 'If your guess is one spot away from the correct slot, the box will light up Yellow' },
+          { label: 'Red', color: 'wrong', desc: 'If your guess is more than one spot away from the correct slot, the box will light up Red' },
         ],
       },
     ],
   },
-  // More pages will be added here
+  {
+    title: 'Daily Top10',
+    points: [
+      'The Daily Top10 is even easier: Rank the Daily Top10 based on your own personal opinion!',
+      'When you come back the next day, see how your opinion compares to the Community Consensus Ranking.',
+    ],
+  },
 ]
 
 function hasSeenToday() {
