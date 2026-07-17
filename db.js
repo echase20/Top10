@@ -22,4 +22,21 @@ db.exec(`
   )
 `)
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS feedback (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    message       TEXT     NOT NULL,
+    contact_email TEXT,
+    submitted_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )
+`)
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS suggestions (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    message       TEXT     NOT NULL,
+    submitted_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )
+`)
+
 export default db

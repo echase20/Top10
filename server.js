@@ -1,8 +1,12 @@
+import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import { fileURLToPath } from 'url'
 import path from 'path'
+import { Resend } from 'resend'
 import db from './db.js'
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -93,6 +97,67 @@ app.get('/api/opinion/aggregate/:puzzleId', (req, res) => {
   averages.sort((a, b) => a.avg - b.avg)
 
   return res.json({ hasData: true, rankedIds: averages.map(x => x.id) })
+})
+
+// ---------------------------------------------------------------------------
+// POST /api/feedback
+// ---------------------------------------------------------------------------
+app.post('/api/feedback', async (req, res) => {
+  const { message, contactEmail } = req.body
+
+  if (typeof message !== 'string' || !message.trim()) {
+    return res.status(400).json({ error: 'Invalid request body' })
+  }
+
+  const trimmedMessage = message.trim()
+  const trimmedEmail = typeof contactEmail === 'string' ? contactEmail.trim() : ''
+
+  try {
+    db.prepare(
+      'INSERT INTO feedback (message, contact_email, submitted_at) VALUES (?, ?, ?)',
+    ).run(trimmedMessage, trimmedEmail || null, getNowET())
+    db.pragma('wal_checkpoint(FULL)')
+  } catch (err) {
+    console.error('DB error on POST /api/feedback:', err)
+    return res.status(500).json({ error: 'Server error' })
+  }
+
+  if (resend && process.env.FEEDBACK_TO_EMAIL) {
+    try {
+      await resend.emails.send({
+        from: 'Top10 Feedback <onboarding@resend.dev>',
+        to: process.env.FEEDBACK_TO_EMAIL,
+        subject: 'New Top10 Feedback',
+        text: `${trimmedMessage}${trimmedEmail ? `\n\nReply to: ${trimmedEmail}` : ''}`,
+      })
+    } catch (err) {
+      console.error('Resend error on POST /api/feedback:', err)
+    }
+  }
+
+  return res.json({ success: true })
+})
+
+// ---------------------------------------------------------------------------
+// POST /api/suggestions
+// ---------------------------------------------------------------------------
+app.post('/api/suggestions', (req, res) => {
+  const { message } = req.body
+
+  if (typeof message !== 'string' || !message.trim()) {
+    return res.status(400).json({ error: 'Invalid request body' })
+  }
+
+  try {
+    db.prepare(
+      'INSERT INTO suggestions (message, submitted_at) VALUES (?, ?)',
+    ).run(message.trim(), getNowET())
+    db.pragma('wal_checkpoint(FULL)')
+    return res.json({ success: true })
+  } catch (err) {
+    console.error('DB error on POST /api/suggestions:', err)
+    return res.status(500).json({ error: 'Server error' })
+  }
 })
 
 // ---------------------------------------------------------------------------

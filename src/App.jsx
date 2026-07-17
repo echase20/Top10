@@ -5,6 +5,11 @@ import GameBoard from './components/GameBoard'
 import OpinionBoard from './components/OpinionBoard'
 import StatsModal from './components/StatsModal'
 import WelcomeModal from './components/WelcomeModal'
+import MenuPanel from './components/MenuPanel'
+import TipsModal from './components/TipsModal'
+import QuestionsModal from './components/QuestionsModal'
+import FeedbackForm from './components/FeedbackForm'
+import SuggestionsForm from './components/SuggestionsForm'
 import DevPanel from './components/DevPanel'
 import { useGameState } from './hooks/useGameState'
 import { useOpinionState } from './hooks/useOpinionState'
@@ -20,6 +25,8 @@ export default function App() {
     document.documentElement.dataset.theme = view
   }, [view])
   const [showWelcome, setShowWelcome] = useState(true)
+  const [showMenu, setShowMenu] = useState(false)
+  const [activeMenuModal, setActiveMenuModal] = useState(null)
   const game = useGameState()
   const opinion = useOpinionState()
 
@@ -59,7 +66,14 @@ export default function App() {
   return (
     <div className={`app theme-${view}`}>
       <img src={logo} alt="" className="app-watermark" aria-hidden="true" />
-      <Header onShowStats={() => setShowStats(true)} streak={stats.currentStreak} />
+      <Header
+        onShowStats={() => setShowStats(true)}
+        onOpenMenu={() => {
+          setShowWelcome(false)
+          setShowMenu(true)
+        }}
+        streak={stats.currentStreak}
+      />
 
       <main className="main">
         {view === 'ranking' && (
@@ -108,7 +122,28 @@ export default function App() {
         />
       )}
 
-      {showWelcome && <WelcomeModal onClose={() => setShowWelcome(false)} />}
+      {showMenu && (
+        <MenuPanel
+          onClose={() => setShowMenu(false)}
+          onSelect={key => {
+            setActiveMenuModal(key)
+            setShowMenu(false)
+          }}
+        />
+      )}
+
+      {(showWelcome || activeMenuModal === 'howToPlay') && (
+        <WelcomeModal
+          onClose={() => {
+            setShowWelcome(false)
+            setActiveMenuModal(null)
+          }}
+        />
+      )}
+      {activeMenuModal === 'tips' && <TipsModal onClose={() => setActiveMenuModal(null)} />}
+      {activeMenuModal === 'questions' && <QuestionsModal onClose={() => setActiveMenuModal(null)} />}
+      {activeMenuModal === 'feedback' && <FeedbackForm onClose={() => setActiveMenuModal(null)} />}
+      {activeMenuModal === 'suggestions' && <SuggestionsForm onClose={() => setActiveMenuModal(null)} />}
 
       {import.meta.env.DEV && <DevPanel game={game} opinion={opinion} />}
     </div>
