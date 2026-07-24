@@ -252,8 +252,15 @@ html[data-theme="opinion"]::after  { opacity: 1; }
 
 /* ===== Puzzle Info ===== */
 .puzzle-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
   padding: 1.25rem 0 1rem;
+}
+
+.puzzle-info .back-btn {
+  align-self: flex-start;
 }
 
 .category-badge {

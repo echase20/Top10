@@ -127,7 +127,7 @@ export default function OpinionBoard({ game }) {
         <div
           key={data.item.id}
           ref={el => { flyEls.current[i] = el }}
-          className="slot slot-filled feedback-correct fly-clone"
+          className="slot slot-filled fly-clone"
           style={{
             position: 'fixed',
             left: data.tx,

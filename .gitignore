@@ -8,6 +8,7 @@ dist/
 database.sqlite
 database.sqlite-wal
 database.sqlite-shm
+prod-db/
 
 # Environment variables
 .env
