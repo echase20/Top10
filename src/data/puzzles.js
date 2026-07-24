@@ -2,7 +2,7 @@ export const puzzles = [
   {
     id: 0,
     opinionPuzzle: {
-      category: 'Food Opinions',
+      category: 'Food',
       question: 'Rank these foods from your personal favorite to least favorite',
       items: [
         { id: 1, name: 'Pizza' },
@@ -21,7 +21,7 @@ export const puzzles = [
   {
     id: 1,
     opinionPuzzle: {
-      category: 'Travel Opinions',
+      category: 'Travel',
       question: 'Rank these travel destinations from most to least desirable to visit',
       items: [
         { id: 1, name: 'Tokyo, Japan' },
@@ -40,7 +40,7 @@ export const puzzles = [
   {
     id: 2,
     opinionPuzzle: {
-      category: 'Music Opinions',
+      category: 'Music',
       question: 'Rank these music genres from your personal favorite to least favorite',
       items: [
         { id: 1, name: 'Pop' },
@@ -59,7 +59,7 @@ export const puzzles = [
   {
     id: 3,
     opinionPuzzle: {
-      category: 'Superpower Opinions',
+      category: 'Superpowers',
       question: 'Rank these superpowers from most to least desirable to have',
       items: [
         { id: 1, name: 'Fly anywhere instantly' },
@@ -96,7 +96,7 @@ export const puzzles = [
   {
     id: 4,
     opinionPuzzle: {
-      category: 'Pet Opinions',
+      category: 'Pets',
       question: 'Rank these animals from most to least desirable as a pet',
       items: [
         { id: 1, name: 'Dog' },
@@ -115,7 +115,7 @@ export const puzzles = [
   {
     id: 5,
     opinionPuzzle: {
-      category: 'Social Media Opinions',
+      category: 'Social Media',
       question: 'Rank these social media platforms from your personal favorite to least favorite',
       items: [
         { id: 1, name: 'Instagram' },
@@ -134,7 +134,7 @@ export const puzzles = [
   {
     id: 6,
     opinionPuzzle: {
-      category: 'Sports Opinions',
+      category: 'Sports',
       question: 'Rank these sports from most to least enjoyable to watch',
       items: [
         { id: 1, name: 'American Football' },
@@ -153,7 +153,7 @@ export const puzzles = [
   {
     id: 7,
     opinionPuzzle: {
-      category: 'Movie Genre Opinions',
+      category: 'Movie Genres',
       question: 'Rank these movie genres from your personal favorite to least favorite',
       items: [
         { id: 1, name: 'Action / Adventure' },
@@ -172,7 +172,7 @@ export const puzzles = [
   {
     id: 8,
     opinionPuzzle: {
-      category: 'Free Time Opinions',
+      category: 'Free Time',
       question: 'Rank these free time activities from most to least enjoyable',
       items: [
         { id: 1, name: 'Gaming' },
@@ -191,7 +191,7 @@ export const puzzles = [
   {
     id: 9,
     opinionPuzzle: {
-      category: 'Fast Food Opinions',
+      category: 'Fast Food',
       question: 'Rank these fast food chains from your personal favorite to least favorite',
       items: [
         { id: 1, name: "McDonald's" },
