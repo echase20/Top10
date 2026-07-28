@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { getTodayStrET } from '../utils/gameLogic'
+import { getSessionId } from '../utils/session'
 
 function loadRating() {
   try {
@@ -14,7 +15,7 @@ function saveRating(value) {
   } catch {}
 }
 
-export default function PuzzleRater() {
+export default function PuzzleRater({ puzzleId }) {
   const [rating, setRating] = useState(loadRating)
   const [pending, setPending] = useState(rating ?? 3)
   const [submitted, setSubmitted] = useState(rating !== null)
@@ -23,6 +24,12 @@ export default function PuzzleRater() {
     saveRating(pending)
     setRating(pending)
     setSubmitted(true)
+
+    fetch('/api/rating', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ puzzleId, sessionId: getSessionId(), rating: pending }),
+    }).catch(() => {})
   }
 
   if (submitted) {

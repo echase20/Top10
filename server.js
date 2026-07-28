@@ -100,6 +100,41 @@ app.get('/api/opinion/aggregate/:puzzleId', (req, res) => {
 })
 
 // ---------------------------------------------------------------------------
+// POST /api/rating
+// ---------------------------------------------------------------------------
+app.post('/api/rating', (req, res) => {
+  const { puzzleId, sessionId, rating } = req.body
+
+  if (
+    typeof puzzleId !== 'number' ||
+    typeof sessionId !== 'string' ||
+    !sessionId.trim() ||
+    typeof rating !== 'number' ||
+    rating < 1 ||
+    rating > 5
+  ) {
+    return res.status(400).json({ error: 'Invalid request body' })
+  }
+
+  try {
+    db.prepare(
+      'INSERT INTO puzzle_ratings (puzzle_id, session_id, rating, submitted_at) VALUES (?, ?, ?, ?)',
+    ).run(puzzleId, sessionId.trim(), rating, getNowET())
+
+    db.pragma('wal_checkpoint(FULL)')
+
+    console.log(`[rating] recorded puzzle=${puzzleId} session=${sessionId.trim().slice(0, 8)}… rating=${rating}`)
+    return res.json({ success: true })
+  } catch (err) {
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return res.json({ success: true, alreadySubmitted: true })
+    }
+    console.error('DB error on POST /api/rating:', err)
+    return res.status(500).json({ error: 'Server error' })
+  }
+})
+
+// ---------------------------------------------------------------------------
 // POST /api/feedback
 // ---------------------------------------------------------------------------
 app.post('/api/feedback', async (req, res) => {
@@ -175,6 +210,19 @@ app.get('/api/dev/responses', (req, res) => {
     return res.status(401).json({ error: 'Unauthorized' })
   }
   const rows = db.prepare('SELECT * FROM opinion_responses ORDER BY submitted_at DESC').all()
+  res.json(rows)
+})
+
+// ---------------------------------------------------------------------------
+// Dev: view all puzzle ratings
+// Requires ?key=DEV_KEY query param to prevent public access
+// ---------------------------------------------------------------------------
+app.get('/api/dev/ratings', (req, res) => {
+  const devKey = process.env.DEV_KEY
+  if (!devKey || req.query.key !== devKey) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+  const rows = db.prepare('SELECT * FROM puzzle_ratings ORDER BY submitted_at DESC').all()
   res.json(rows)
 })
 

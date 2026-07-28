@@ -1,6 +1,6 @@
 import PuzzleRater from './PuzzleRater'
 
-export default function StatsModal({ stats, onClose, gameStatus, onContinue }) {
+export default function StatsModal({ stats, onClose, gameStatus, onContinue, puzzleId }) {
   const winPct =
     stats.gamesPlayed > 0 ? Math.round((stats.gamesWon / stats.gamesPlayed) * 100) : 0
 
@@ -52,7 +52,7 @@ export default function StatsModal({ stats, onClose, gameStatus, onContinue }) {
           </div>
         </div>
 
-        {(gameStatus === 'won' || gameStatus === 'lost') && <PuzzleRater />}
+        {(gameStatus === 'won' || gameStatus === 'lost') && <PuzzleRater puzzleId={puzzleId} />}
 
         {onContinue && (
           <button className="continue-btn" onClick={onContinue}>

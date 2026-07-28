@@ -119,6 +119,7 @@ export default function App() {
           onClose={() => setShowStats(false)}
           gameStatus={gameStatus}
           onContinue={rankingDone && view === 'ranking' ? handleContinueToOpinion : null}
+          puzzleId={puzzle.id}
         />
       )}
 

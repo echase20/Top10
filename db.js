@@ -23,6 +23,17 @@ db.exec(`
 `)
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS puzzle_ratings (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    puzzle_id     INTEGER  NOT NULL,
+    session_id    TEXT     NOT NULL,
+    rating        REAL     NOT NULL,
+    submitted_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(puzzle_id, session_id)
+  )
+`)
+
+db.exec(`
   CREATE TABLE IF NOT EXISTS feedback (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     message       TEXT     NOT NULL,
