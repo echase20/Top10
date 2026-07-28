@@ -110,16 +110,23 @@ export function useGameState() {
       if (saved) {
         const state = JSON.parse(saved)
         const itemMap = Object.fromEntries(puzzle.items.map(i => [i.id, i]))
-        return {
-          leftItems: state.leftItemIds.map(id => itemMap[id]).filter(Boolean),
-          rightItems: state.rightItemIds.map(id => (id != null ? itemMap[id] : null)),
-          attempts: state.attempts.map(a => ({
-            items: a.itemIds.map(id => (id != null ? itemMap[id] : null)),
-            feedback: a.feedback,
-          })),
-          gameStatus: state.gameStatus,
-          lastFeedback: state.lastFeedback || null,
-          lockedSlots: state.lockedSlots || Array(10).fill(false),
+        const leftItems = state.leftItemIds.map(id => itemMap[id]).filter(Boolean)
+        const rightItems = state.rightItemIds.map(id => (id != null ? itemMap[id] : null))
+        // Guard against a corrupted/partial save (e.g. persisted before the
+        // board finished initializing) silently producing an empty board.
+        const placedCount = leftItems.length + rightItems.filter(Boolean).length
+        if (placedCount === puzzle.items.length) {
+          return {
+            leftItems,
+            rightItems,
+            attempts: state.attempts.map(a => ({
+              items: a.itemIds.map(id => (id != null ? itemMap[id] : null)),
+              feedback: a.feedback,
+            })),
+            gameStatus: state.gameStatus,
+            lastFeedback: state.lastFeedback || null,
+            lockedSlots: state.lockedSlots || Array(10).fill(false),
+          }
         }
       }
     } catch {}
@@ -157,6 +164,9 @@ export function useGameState() {
   const { leftItems, rightItems, attempts, gameStatus, lastFeedback, lockedSlots } = gameState
 
   useEffect(() => {
+    // Skip the placeholder state that exists before communityRanking resolves —
+    // persisting it would overwrite real saved progress with an empty board.
+    if (!gameInitializedRef.current) return
     try {
       const toSave = {
         leftItemIds: gameState.leftItems.map(i => i.id),
