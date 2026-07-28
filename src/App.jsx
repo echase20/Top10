@@ -6,7 +6,6 @@ import OpinionBoard from './components/OpinionBoard'
 import StatsModal from './components/StatsModal'
 import WelcomeModal from './components/WelcomeModal'
 import MenuPanel from './components/MenuPanel'
-import TipsModal from './components/TipsModal'
 import QuestionsModal from './components/QuestionsModal'
 import FeedbackForm from './components/FeedbackForm'
 import SuggestionsForm from './components/SuggestionsForm'
@@ -141,7 +140,6 @@ export default function App() {
           }}
         />
       )}
-      {activeMenuModal === 'tips' && <TipsModal onClose={() => setActiveMenuModal(null)} />}
       {activeMenuModal === 'questions' && <QuestionsModal onClose={() => setActiveMenuModal(null)} />}
       {activeMenuModal === 'feedback' && <FeedbackForm onClose={() => setActiveMenuModal(null)} />}
       {activeMenuModal === 'suggestions' && <SuggestionsForm onClose={() => setActiveMenuModal(null)} />}

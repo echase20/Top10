@@ -1,6 +1,5 @@
 const MENU_ITEMS = [
   { key: 'howToPlay', label: 'How to Play' },
-  { key: 'tips', label: 'Tips and Tricks' },
   { key: 'feedback', label: 'Feedback or Report a Problem' },
   { key: 'questions', label: 'Questions' },
   { key: 'suggestions', label: 'Top10 Suggestions' },
